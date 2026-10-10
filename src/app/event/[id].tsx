@@ -232,13 +232,13 @@ export default function EventDetailScreen() {
     return (
       <View style={styles.notFoundContainer}>
         <View style={styles.notFoundCard}>
-          <Text style={styles.notFoundIcon}>🏛️</Text>
-          <Text style={styles.notFoundTitle}>Event Vault Not Found</Text>
+          <Text style={styles.notFoundIcon}>🔒</Text>
+          <Text style={styles.notFoundTitle}>Private Event Archive</Text>
           <Text style={styles.notFoundSub}>
-            The requested private event production could not be located or may have been archived. Please verify your event passcode.
+            This event gallery is private and restricted to invited guests. Please enter your event invitation passcode on the home screen to unlock access.
           </Text>
           <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/')}>
-            <Text style={styles.returnBtnText}>← Return to Lookbook</Text>
+            <Text style={styles.returnBtnText}>← Enter Event Passcode</Text>
           </TouchableOpacity>
         </View>
       </View>

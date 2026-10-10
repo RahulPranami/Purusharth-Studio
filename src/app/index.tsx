@@ -32,14 +32,11 @@ interface EventPass {
   cover_url?: string;
 }
 
-interface EventRecord {
+interface PublicCollection {
   id: string;
   title: string;
   description: string | null;
-  event_date: string | null;
-  location: string | null;
   cover_url: string | null;
-  total_photos: number;
 }
 
 export default function ClientHomeScreen() {
@@ -58,7 +55,7 @@ export default function ClientHomeScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [activePasses, setActivePasses] = useState<EventPass[]>([]);
-  const [liveEvents, setLiveEvents] = useState<EventRecord[]>([]);
+  const [publicCollections, setPublicCollections] = useState<PublicCollection[]>([]);
 
   const [previewVideoOpen, setPreviewVideoOpen] = useState(false);
   const [activeVideoTitle, setActiveVideoTitle] = useState('');
@@ -75,7 +72,7 @@ export default function ClientHomeScreen() {
     }
   }, [isAuthenticated, profile?.role]);
 
-  // Load unlocked passes (AsyncStorage + Supabase) and live events
+  // Load unlocked passes (AsyncStorage + Supabase) and public collections
   useEffect(() => {
     async function loadData() {
       try {
@@ -108,15 +105,15 @@ export default function ClientHomeScreen() {
 
         setActivePasses(passes);
 
-        // 3. Load active productions from Supabase
-        const { data: eventsData } = await supabase
-          .from('events')
-          .select('id, title, description, event_date, location, cover_url, total_photos')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
+        // 3. Load public showcase collections from Supabase
+        const { data: collectionsData } = await supabase
+          .from('collections')
+          .select('id, title, description, cover_url')
+          .eq('visibility', 'public')
+          .order('published_at', { ascending: false });
 
-        if (eventsData && eventsData.length > 0) {
-          setLiveEvents(eventsData);
+        if (collectionsData && collectionsData.length > 0) {
+          setPublicCollections(collectionsData);
         }
       } catch (e) {
         console.warn('Error loading initial data:', e);
@@ -358,11 +355,82 @@ export default function ClientHomeScreen() {
           </View>
         </View>
 
-        {/* SECTION 2: Studio Productions from Database */}
+        {/* SECTION 2: Your Unlocked Event Galleries (Only shown when user has unlocked passes) */}
+        {activePasses.length > 0 && (
+          <>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.eyebrow}>YOUR UNLOCKED ARCHIVES</Text>
+                <Text style={styles.sectionHeading}>Private Event Galleries</Text>
+              </View>
+              <View style={styles.releaseBadge}>
+                <Text style={styles.releaseBadgeText}>UNLOCKED</Text>
+              </View>
+            </View>
+
+            <View style={styles.collectionsGrid}>
+              {activePasses.map((item) => (
+                <View key={item.id} style={styles.collectionCard}>
+                  <View style={styles.imageBox}>
+                    {item.cover_url ? (
+                      <Image source={{ uri: item.cover_url }} style={styles.collectionImg} />
+                    ) : (
+                      <View style={styles.placeholderCover}>
+                        <Text style={styles.placeholderCoverText}>{item.title}</Text>
+                      </View>
+                    )}
+                    <View style={styles.gradientOverlay} />
+                    <View style={styles.tagBadge}>
+                      <Text style={styles.tagBadgeText}>Private Vault</Text>
+                    </View>
+                    <View style={styles.cardHeaderOverlay}>
+                      <Text style={styles.cardSubText}>{item.location || 'Private Event'}</Text>
+                      <Text style={styles.cardTitleText}>{item.title}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardFooter}>
+                    <View style={styles.metricsRow}>
+                      <Text style={styles.metricItem}>
+                        📷 {item.total_photos > 0 ? `${item.total_photos} Photos` : 'Gallery Ready'}
+                      </Text>
+                      {item.event_date && (
+                        <Text style={styles.metricItem}>
+                          📅 {item.event_date}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity
+                        style={styles.openStillsBtn}
+                        activeOpacity={0.8}
+                        onPress={() => router.push(`/event/${item.id}` as any)}>
+                        <Text style={styles.openStillsText}>OPEN GALLERY</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.watchPreviewBtn}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setActiveVideoTitle(item.title);
+                          setPreviewVideoOpen(true);
+                        }}>
+                        <Text style={styles.watchPreviewText}>▶ PREVIEW TEASER</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* SECTION 3: Public Studio Showcase Collections */}
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.eyebrow}>STUDIO ARCHIVES</Text>
-            <Text style={styles.sectionHeading}>Current Productions</Text>
+            <Text style={styles.eyebrow}>STUDIO SHOWCASE</Text>
+            <Text style={styles.sectionHeading}>Curated Portfolio Lookbooks</Text>
           </View>
           <View style={styles.releaseBadge}>
             <Text style={styles.releaseBadgeText}>OFFICIAL</Text>
@@ -370,7 +438,7 @@ export default function ClientHomeScreen() {
         </View>
 
         <View style={styles.collectionsGrid}>
-          {liveEvents.map((item) => (
+          {publicCollections.map((item) => (
             <View key={item.id} style={styles.collectionCard}>
               <View style={styles.imageBox}>
                 {item.cover_url ? (
@@ -382,42 +450,30 @@ export default function ClientHomeScreen() {
                 )}
                 <View style={styles.gradientOverlay} />
                 <View style={styles.tagBadge}>
-                  <Text style={styles.tagBadgeText}>Production Gallery</Text>
+                  <Text style={styles.tagBadgeText}>Editorial Showcase</Text>
                 </View>
                 <View style={styles.cardHeaderOverlay}>
-                  <Text style={styles.cardSubText}>{item.location || 'Exclusive Archive'}</Text>
+                  <Text style={styles.cardSubText}>Official Lookbook</Text>
                   <Text style={styles.cardTitleText}>{item.title}</Text>
                 </View>
               </View>
 
               <View style={styles.cardFooter}>
-                <View style={styles.metricsRow}>
-                  <Text style={styles.metricItem}>
-                    📷 {item.total_photos} Photos Ingested
+                {item.description ? (
+                  <Text style={[styles.vaultHint, { marginBottom: 12 }]} numberOfLines={2}>
+                    {item.description}
                   </Text>
-                  {item.event_date && (
-                    <Text style={styles.metricItem}>
-                      📅 {item.event_date}
-                    </Text>
-                  )}
-                </View>
+                ) : null}
 
                 <View style={styles.actionRow}>
                   <TouchableOpacity
-                    style={styles.openStillsBtn}
-                    activeOpacity={0.8}
-                    onPress={() => router.push(`/event/${item.id}` as any)}>
-                    <Text style={styles.openStillsText}>OPEN GALLERY</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.watchPreviewBtn}
+                    style={[styles.watchPreviewBtn, { flex: 1, backgroundColor: '#1B1C19' }]}
                     activeOpacity={0.8}
                     onPress={() => {
                       setActiveVideoTitle(item.title);
                       setPreviewVideoOpen(true);
                     }}>
-                    <Text style={styles.watchPreviewText}>▶ PREVIEW TEASER</Text>
+                    <Text style={[styles.watchPreviewText, { color: '#C5A059' }]}>▶ WATCH CINEMA TEASER</Text>
                   </TouchableOpacity>
                 </View>
               </View>
