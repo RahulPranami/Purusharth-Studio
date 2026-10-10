@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Image,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
-  Image,
-  Alert,
-  StatusBar,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '@/context/auth-context';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -121,8 +120,6 @@ export default function LoginScreen() {
           />
         </View>
 
-        <Text style={styles.brandSubtitle}>“Your Moments. Your Memories.”</Text>
-
         {/* Feedback Alert */}
         {feedback && (
           <View
@@ -186,12 +183,12 @@ export default function LoginScreen() {
             )}
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address or Mobile Number</Text>
+              <Text style={styles.label}>Email Address</Text>
               <TextInput
                 style={styles.input}
                 value={contact}
                 onChangeText={setContact}
-                placeholder="name@domain.com or +91 9876543210"
+                placeholder="name@domain.com"
                 placeholderTextColor="#9CA3AF"
                 autoCapitalize="none"
               />
@@ -199,10 +196,7 @@ export default function LoginScreen() {
 
             {isRegister && (
               <View style={styles.inputGroup}>
-                <View style={styles.labelRow}>
-                  <Text style={styles.label}>VIP Invitation Code (Optional)</Text>
-                  <Text style={styles.badgeText}>Exclusive Access</Text>
-                </View>
+                <Text style={styles.label}>Invitation Code (Optional)</Text>
                 <TextInput
                   style={[styles.input, styles.monoInput]}
                   value={inviteCode}
@@ -211,9 +205,6 @@ export default function LoginScreen() {
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="characters"
                 />
-                <Text style={styles.hintText}>
-                  Enter an invitation passcode to unlock exclusive galleries and features.
-                </Text>
               </View>
             )}
 
@@ -282,19 +273,6 @@ export default function LoginScreen() {
             </View>
           </View>
         )}
-
-        {/* Archival Security Badge */}
-        <View style={styles.securityBox}>
-          <Text style={styles.securityTitle}>ARCHIVAL SECURITY</Text>
-          <Text style={styles.securityText}>
-            Private digital lookbooks are watermark-secured with end-to-end encrypted distribution.
-          </Text>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footerText}>
-          Purusharth Studio Fine Art Cinematography © 2025
-        </Text>
       </View>
     </ScrollView>
   );
@@ -338,8 +316,8 @@ const styles = StyleSheet.create({
     borderColor: '#EFECE6',
   },
   logoContainer: {
-    width: 160,
-    height: 48,
+    width: 320,
+    height: 96,
     alignSelf: 'center',
     marginBottom: 10,
     alignItems: 'center',
