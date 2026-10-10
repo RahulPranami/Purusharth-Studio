@@ -91,6 +91,33 @@ export type NativeImageInput = {
 };
 
 // ---------------------------------------------------------------------------
+// HELPER: FORMAT API ERRORS SAFELY (NEVER RETURN [object Object])
+// ---------------------------------------------------------------------------
+
+export function formatApiError(data: any, fallbackStatus?: number): string {
+  if (!data) return fallbackStatus ? `Request failed (HTTP ${fallbackStatus})` : 'Unknown error';
+  if (typeof data === 'string') return data;
+  if (typeof data.detail === 'string') return data.detail;
+  if (Array.isArray(data.detail)) {
+    return (
+      data.detail
+        .map((item: any) => {
+          if (typeof item === 'string') return item;
+          return item.msg || item.message || JSON.stringify(item);
+        })
+        .filter(Boolean)
+        .join(', ') || 'Validation error'
+    );
+  }
+  if (typeof data.detail === 'object' && data.detail !== null) {
+    return data.detail.msg || data.detail.message || data.detail.error || JSON.stringify(data.detail);
+  }
+  if (typeof data.message === 'string') return data.message;
+  if (typeof data.error === 'string') return data.error;
+  return fallbackStatus ? `Request failed (HTTP ${fallbackStatus})` : 'Server error';
+}
+
+// ---------------------------------------------------------------------------
 // HELPER: PREPARE MULTIPART FORM DATA FOR WEB & REACT NATIVE
 // ---------------------------------------------------------------------------
 
@@ -172,81 +199,100 @@ export async function analyzeSelfie(
   }
 
   if (!res.ok) {
-    throw new Error(data.detail || `Analysis failed with status ${res.status}`);
+    throw new Error(formatApiError(data, res.status));
   }
 
   return data as SelfieAnalyzeResponse;
+}
+
+export interface MatchSelfieParams {
+  selfieKey?: string | null;
+  selfieUrl?: string | null;
+  fileInput?: NativeImageInput | Blob | File | null;
+  collectionScope?: string;
+  threshold?: number;
 }
 
 /**
  * Match an enrolled selfie against event photos.
  * 
  * Supports:
- * - Option A: Using existing R2 key (`selfieKey`, e.g. "selfies/user123_456.jpg")
+ * - Option A: Using enrolled R2 key (`selfieKey`) or public URL (`selfieUrl`)
  * - Option B: Using freshly captured selfie (`fileInput`)
  */
-export async function matchSelfieWithEvent(params: {
-  selfieKey?: string;
-  fileInput?: NativeImageInput | Blob | File;
-  collectionScope?: string;
-  threshold?: number;
-}): Promise<SelfieMatchResponse> {
-  const { selfieKey, fileInput, collectionScope = 'default', threshold = 0.40 } = params;
+export async function matchSelfieWithEvent(
+  params: MatchSelfieParams
+): Promise<SelfieMatchResponse> {
+  const { selfieKey, selfieUrl, fileInput, collectionScope = 'default', threshold = 0.40 } = params;
 
-  if (selfieKey) {
-    // JSON matching using already enrolled R2 key
-    const res = await fetch(`${ANALYZER_BASE_URL}/selfie/match`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        selfie_image_key: selfieKey,
-        collection_scope: collectionScope,
-        threshold,
-      }),
-    });
+  let activeFileInput: NativeImageInput | Blob | File | null = fileInput || null;
 
-    const text = await res.text();
-    let data: any;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error(`Analyzer response error (${res.status}): ${text || res.statusText}`);
+  // If no direct fileInput provided, fetch image from selfieUrl or selfieKey
+  if (!activeFileInput && (selfieKey || selfieUrl)) {
+    const publicBase = (
+      process.env.EXPO_PUBLIC_R2_PUBLIC_URL ||
+      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev'
+    ).replace(/\/+$/, '');
+
+    let targetUrl = selfieUrl;
+    if (!targetUrl && selfieKey) {
+      targetUrl = selfieKey.startsWith('http')
+        ? selfieKey
+        : `${publicBase}/${selfieKey.replace(/^\/+/, '')}`;
     }
 
-    if (!res.ok) {
-      throw new Error(data.detail || `Matching failed with status ${res.status}`);
+    if (targetUrl) {
+      try {
+        const imgRes = await fetch(targetUrl);
+        if (!imgRes.ok) {
+          throw new Error(`Could not download enrolled selfie from storage (${imgRes.status}).`);
+        }
+        const blob = await imgRes.blob();
+        activeFileInput = blob;
+      } catch (fetchErr: any) {
+        console.warn('Failed to load selfie for facial match:', targetUrl, fetchErr);
+        throw new Error(
+          fetchErr?.message && fetchErr.message !== '[object Object]'
+            ? fetchErr.message
+            : 'Could not access your selfie image. Please re-upload your selfie in profile.'
+        );
+      }
     }
-
-    return data as SelfieMatchResponse;
   }
 
-  if (fileInput) {
-    // Multipart upload matching
-    const formData = await createFormDataWithFile(fileInput, 'file');
+  if (!activeFileInput) {
+    throw new Error('Biometric selfie required. Please take a selfie in your profile first.');
+  }
+
+  const formData = await createFormDataWithFile(activeFileInput, 'file');
+  if (collectionScope && collectionScope !== 'default') {
     formData.append('collection_scope', collectionScope);
-    formData.append('threshold', String(threshold));
+  }
+  formData.append('threshold', String(threshold));
 
-    const res = await fetch(`${ANALYZER_BASE_URL}/match/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+  const res = await fetch(`${ANALYZER_BASE_URL}/selfie/match`, {
+    method: 'POST',
+    body: formData,
+  });
 
-    const text = await res.text();
-    let data: any;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      throw new Error(`Analyzer response error (${res.status}): ${text || res.statusText}`);
-    }
-
-    if (!res.ok) {
-      throw new Error(data.detail || `Matching upload failed with status ${res.status}`);
-    }
-
-    return data as SelfieMatchResponse;
+  const text = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Analyzer response error (${res.status}): ${text || res.statusText}`);
   }
 
-  throw new Error('Either selfieKey or fileInput must be provided to matchSelfieWithEvent.');
+  if (!res.ok) {
+    throw new Error(formatApiError(data, res.status));
+  }
+
+  return {
+    total_faces_in_query: data.total_faces_in_query || 0,
+    matched_photos_count: data.matched_photos_count || (Array.isArray(data.top_matches) ? data.top_matches.length : 0),
+    threshold_applied: data.threshold_applied ?? threshold,
+    top_matches: Array.isArray(data.top_matches) ? data.top_matches : [],
+  };
 }
 
 /**
@@ -281,7 +327,7 @@ export async function indexPhotoInAnalyzer(
         object_key: objectKey,
         status: 'skipped',
         faces_detected: 0,
-        message: data.detail || 'Indexing failed',
+        message: formatApiError(data, res.status),
       };
     }
 
@@ -292,7 +338,7 @@ export async function indexPhotoInAnalyzer(
       object_key: objectKey,
       status: 'skipped',
       faces_detected: 0,
-      message: err.message || 'Network error',
+      message: err?.message && err.message !== '[object Object]' ? err.message : 'Network error',
     };
   }
 }

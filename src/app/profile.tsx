@@ -151,7 +151,13 @@ export default function ProfileScreen() {
     } catch (err: any) {
       setUploadingSelfie(false);
       console.error('Selfie upload error:', err);
-      setFeedback({ type: 'error', message: err.message || 'Failed to upload selfie.' });
+      let errorMsg = 'Failed to upload selfie.';
+      if (typeof err === 'string') {
+        errorMsg = err;
+      } else if (err?.message && typeof err.message === 'string' && err.message !== '[object Object]') {
+        errorMsg = err.message;
+      }
+      setFeedback({ type: 'error', message: errorMsg });
     }
   };
 

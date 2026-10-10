@@ -129,7 +129,7 @@ export default function EventDetailScreen() {
 
   const handleSelectMyPhotos = async () => {
     setFilterTab('my_photos');
-    if (!profile?.selfie_key) {
+    if (!profile?.selfie_key && !profile?.selfie_url) {
       Alert.alert(
         'Biometric Selfie Needed',
         'To find photos featuring you with AI, please take a quick selfie in your profile first.',
@@ -147,15 +147,22 @@ export default function EventDetailScreen() {
     setMatchStatusText('Scanning faces in event album with AI...');
     try {
       const res = await matchSelfieWithEvent({
-        selfieKey: profile.selfie_key,
+        selfieKey: profile?.selfie_key || undefined,
+        selfieUrl: profile?.selfie_url || undefined,
         collectionScope: (id as string) || event?.id || 'default',
         threshold: 0.40,
       });
 
       const map = new Map<string, number>();
-      res.top_matches.forEach((m) => {
-        map.set(m.image_key, Math.round(m.best_similarity * 100));
-      });
+      if (Array.isArray(res.top_matches)) {
+        res.top_matches.forEach((m) => {
+          if (m && m.image_key) {
+            const similarity = Math.round((m.best_similarity || 0) * 100);
+            map.set(m.image_key, similarity);
+            map.set(m.image_key.replace(/^\/+/, ''), similarity);
+          }
+        });
+      }
       setMatchedPhotoKeys(map);
       setMatchStatusText(
         map.size > 0
@@ -164,7 +171,19 @@ export default function EventDetailScreen() {
       );
     } catch (err: any) {
       console.warn('AI matching error:', err);
-      setMatchStatusText(err.message || 'AI matching temporarily unavailable.');
+      let errorMsg = 'AI facial matching temporarily unavailable.';
+      if (typeof err === 'string') {
+        errorMsg = err;
+      } else if (err?.message && typeof err.message === 'string' && err.message !== '[object Object]') {
+        errorMsg = err.message;
+      } else if (err?.detail) {
+        if (typeof err.detail === 'string') {
+          errorMsg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          errorMsg = err.detail.map((d: any) => d.msg || 'Validation error').join(', ');
+        }
+      }
+      setMatchStatusText(errorMsg);
     } finally {
       setMatchingPhotos(false);
     }
@@ -172,7 +191,8 @@ export default function EventDetailScreen() {
 
   const filteredPhotos = photos.filter((p) => {
     if (filterTab === 'my_photos') {
-      return matchedPhotoKeys.has(p.object_key);
+      const cleanKey = p.object_key?.replace(/^\/+/, '');
+      return matchedPhotoKeys.has(p.object_key) || (cleanKey && matchedPhotoKeys.has(cleanKey));
     }
     if (filterTab === 'curated') {
       return photos.indexOf(p) < 4 || p.title?.toLowerCase().includes('arrival') || p.title?.toLowerCase().includes('ballroom');
@@ -337,10 +357,10 @@ export default function EventDetailScreen() {
           >
             <View style={styles.photoFrame}>
               <Image source={{ uri: item.url }} style={styles.thumbnail} resizeMode="cover" />
-              {matchedPhotoKeys.has(item.object_key) && (
+              {(matchedPhotoKeys.has(item.object_key) || (item.object_key && matchedPhotoKeys.has(item.object_key.replace(/^\/+/, '')))) && (
                 <View style={styles.matchBadge}>
                   <Text style={styles.matchBadgeText}>
-                    ✨ {matchedPhotoKeys.get(item.object_key)}% Match
+                    ✨ {matchedPhotoKeys.get(item.object_key) || matchedPhotoKeys.get(item.object_key.replace(/^\/+/, ''))}% Match
                   </Text>
                 </View>
               )}
@@ -354,11 +374,35 @@ export default function EventDetailScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>📷</Text>
-            <Text style={styles.emptyTitle}>No Photos Ingested Yet</Text>
-            <Text style={styles.emptySub}>
-              Raw photo batches stream directly from studio memory cards. Check back shortly as ingestion proceeds.
-            </Text>
+            {filterTab === 'my_photos' ? (
+              <>
+                <Text style={styles.emptyIcon}>✨</Text>
+                <Text style={styles.emptyTitle}>
+                  {matchingPhotos ? 'Scanning Event Photos...' : 'No Matching Photos Found'}
+                </Text>
+                <Text style={styles.emptySub}>
+                  {matchingPhotos
+                    ? 'AI facial recognition is comparing your biometric profile against event photos...'
+                    : 'We scanned all event photos but could not find a clear facial match with your profile selfie. New event photos may still be processing.'}
+                </Text>
+              </>
+            ) : filterTab === 'curated' ? (
+              <>
+                <Text style={styles.emptyIcon}>⭐</Text>
+                <Text style={styles.emptyTitle}>No Curated Highlights</Text>
+                <Text style={styles.emptySub}>
+                  Curated highlights have not been tagged for this event yet. Check the All Photos tab.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyIcon}>📷</Text>
+                <Text style={styles.emptyTitle}>No Photos Ingested Yet</Text>
+                <Text style={styles.emptySub}>
+                  Raw photo batches stream directly from studio memory cards. Check back shortly as ingestion proceeds.
+                </Text>
+              </>
+            )}
           </View>
         }
       />
