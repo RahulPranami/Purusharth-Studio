@@ -10,10 +10,11 @@ import {
   Modal,
   Platform,
   useWindowDimensions,
+  StatusBar,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '@/context/auth-context';
@@ -45,6 +46,11 @@ export default function ClientHomeScreen() {
   const { user, profile, isAuthenticated } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
+
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
+    : Math.max(insets.top, 12);
 
   const [eventCode, setEventCode] = useState('');
   const [unlocking, setUnlocking] = useState(false);
@@ -112,7 +118,7 @@ export default function ClientHomeScreen() {
     loadData();
   }, [user]);
 
-  // Handle Event Code submission (Supports adding multiple codes)
+  // Handle Event Code submission (Supports adding multiple codes without overwrite)
   const handleUnlockEvent = async () => {
     const code = eventCode.trim().toUpperCase();
     if (!code) {
@@ -133,35 +139,41 @@ export default function ClientHomeScreen() {
       }
 
       if (data && data.success) {
+        const targetId = data.event_id || data.event?.id || data.id;
         const newPass: EventPass = {
-          id: data.event_id,
-          title: data.title,
-          total_photos: data.total_photos || 0,
-          event_date: data.event_date,
-          location: data.location,
-          cover_url: data.cover_url,
+          id: targetId,
+          title: data.title || data.event?.title || 'Private Event',
+          total_photos: data.total_photos ?? data.event?.total_photos ?? 0,
+          event_date: data.event_date || data.event?.event_date,
+          location: data.location || data.event?.location,
+          cover_url: data.cover_url || data.event?.cover_url,
         };
 
-        // Add to active passes list without duplicates
-        const updatedPasses = [
-          newPass,
-          ...activePasses.filter((p) => p.id !== newPass.id),
-        ];
+        // Merge with existing AsyncStorage items to prevent overwrite
+        const currentSaved = await AsyncStorage.getItem(UNLOCKED_EVENTS_KEY);
+        const existingStored: EventPass[] = currentSaved ? JSON.parse(currentSaved) : [];
+        const mergedMap = new Map<string, EventPass>();
+        [newPass, ...activePasses, ...existingStored].forEach((p) => {
+          if (p && p.id && !mergedMap.has(p.id)) {
+            mergedMap.set(p.id, p);
+          }
+        });
+        const updatedPasses = Array.from(mergedMap.values());
 
         setActivePasses(updatedPasses);
         await AsyncStorage.setItem(UNLOCKED_EVENTS_KEY, JSON.stringify(updatedPasses));
 
-        setSuccessMessage(`Access granted to ${data.title}!`);
+        setSuccessMessage(`Access granted to ${newPass.title}!`);
         setEventCode('');
 
         // Navigate directly to the unlocked gallery
         setTimeout(() => {
-          router.push(`/event/${data.event_id}` as any);
+          router.push(`/event/${targetId}` as any);
         }, 300);
         return;
       }
 
-      setErrorMessage(data?.message || 'Invalid or expired event code.');
+      setErrorMessage(data?.message || data?.error || 'Invalid or expired event code.');
     } catch (err: any) {
       setErrorMessage(err.message || 'Unable to access vault. Please verify your code.');
     } finally {
@@ -170,9 +182,9 @@ export default function ClientHomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       {/* Top Luxury Navigation Header */}
-      <View style={styles.navHeader}>
+      <View style={[styles.navHeader, { paddingTop: topInset }]}>
         <View style={styles.brandRow}>
           <Image
             source={require('@/assets/images/studio-logo-transparent.png')}
@@ -397,6 +409,11 @@ export default function ClientHomeScreen() {
         animationType="fade"
         onRequestClose={() => setPreviewVideoOpen(false)}>
         <View style={styles.videoModalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setPreviewVideoOpen(false)}
+          />
           <View style={styles.videoModalContent}>
             <View style={styles.videoModalHeader}>
               <View>

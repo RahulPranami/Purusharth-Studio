@@ -570,53 +570,42 @@ export default function AdminDashboardScreen() {
 
           {/* Activity Feed */}
           <View style={styles.activityTimeline}>
-            {[
-              {
-                title: 'The Royal Udaipur Wedding',
-                meta: '2,450 photos uploaded by Devansh Kapoor',
-                time: '12m ago',
-                icon: 'cloud_upload',
-                bg: AdminColors.primaryFixed,
-                color: AdminColors.primary,
-              },
-              {
-                title: 'Annual Tech Summit 2025',
-                meta: '820 attendee face vectors generated and published',
-                time: '45m ago',
-                icon: 'fingerprint',
-                bg: AdminColors.surfaceContainerHigh,
-                color: AdminColors.primary,
-              },
-              {
-                title: 'Global FinTech Expo',
-                meta: 'Background worker indexed 1,200 photos via batch #882',
-                time: '1h ago',
-                icon: 'smart_toy',
-                bg: '#fef3c7',
-                color: '#92400e',
-              },
-              {
-                title: 'Oberoi Heritage Gala',
-                meta: 'Devansh approved color grading proxy exports',
-                time: '3h ago',
-                icon: 'verified',
-                bg: '#d1fae5',
-                color: '#065f46',
-              },
-            ].map((act, i) => (
-              <View key={i} style={styles.activityItem}>
-                <View style={[styles.activityIconCircle, { backgroundColor: act.bg }]}>
-                  <AdminIcon name={act.icon} size={15} color={act.color} />
-                </View>
-                <View style={styles.activityTextContent}>
-                  <View style={styles.activityTitleRow}>
-                    <Text style={styles.activityEventTitle}>{act.title}</Text>
-                    <Text style={styles.activityTime}>{act.time}</Text>
-                  </View>
-                  <Text style={styles.activityMetaText}>{act.meta}</Text>
-                </View>
+            {events.length === 0 ? (
+              <View style={{ padding: 24, alignItems: 'center' }}>
+                <Text style={styles.activityMetaText}>Connecting to studio database...</Text>
               </View>
-            ))}
+            ) : (
+              events.slice(0, 4).map((evt, i) => (
+                <View key={evt.id || i} style={styles.activityItem}>
+                  <View
+                    style={[
+                      styles.activityIconCircle,
+                      {
+                        backgroundColor:
+                          i % 2 === 0 ? AdminColors.primaryFixed : '#d1fae5',
+                      },
+                    ]}
+                  >
+                    <AdminIcon
+                      name={i % 2 === 0 ? 'cloud_upload' : 'verified'}
+                      size={15}
+                      color={i % 2 === 0 ? AdminColors.primary : '#065f46'}
+                    />
+                  </View>
+                  <View style={styles.activityTextContent}>
+                    <View style={styles.activityTitleRow}>
+                      <Text style={styles.activityEventTitle}>{evt.title}</Text>
+                      <Text style={styles.activityTime}>{evt.event_date || 'Active'}</Text>
+                    </View>
+                    <Text style={styles.activityMetaText}>
+                      {evt.total_photos > 0
+                        ? `${evt.total_photos.toLocaleString()} photos synchronized via Cloudflare R2 • Location: ${evt.location}`
+                        : `Production vault active • Passcode: ${evt.event_code}`}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </View>

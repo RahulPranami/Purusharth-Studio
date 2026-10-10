@@ -45,90 +45,8 @@ export default function AdminDirectoryScreen() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
-  const [adminsList, setAdminsList] = useState<AdminMember[]>([
-    {
-      id: '804',
-      name: 'Devansh Kapoor',
-      email: 'devansh.k@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Lead Colorist',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: [
-        'The Royal Udaipur Wedding',
-        'Oberoi Heritage Gala 2024',
-      ],
-      status: 'active',
-      dateAdded: 'May 10, 2025',
-      lastActive: '12 mins ago',
-    },
-    {
-      id: '809',
-      name: 'Sarah Chen',
-      email: 'sarah.c@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Lead Shooter',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: ['Annual Tech Summit 2025', 'AI Innovators Gala'],
-      status: 'active',
-      dateAdded: 'Apr 22, 2025',
-      lastActive: '45 mins ago',
-    },
-    {
-      id: '812',
-      name: 'Marcus Kane',
-      email: 'marcus.k@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Contract Staff',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: ['Annual Tech Summit 2025'],
-      status: 'active',
-      dateAdded: 'May 04, 2025',
-      lastActive: '2 hours ago',
-    },
-    {
-      id: '815',
-      name: 'Priya Nambiar',
-      email: 'priya.n@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Field Director',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: ['Mehta & Singhal Sangeet Soirée'],
-      status: 'active',
-      dateAdded: 'May 12, 2025',
-      lastActive: 'Yesterday',
-    },
-    {
-      id: '820',
-      name: 'Kabir Rao',
-      email: 'kabir.r@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Senior DIT',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: ['Oberoi Heritage Gala 2024'],
-      status: 'pending',
-      dateAdded: 'May 20, 2025',
-      lastActive: 'Awaiting Acceptance',
-    },
-    {
-      id: '825',
-      name: 'Elena Rostova',
-      email: 'elena.r@purusharthstudio.com',
-      role: 'Event Admin',
-      specialty: 'Ops Director',
-      avatarUrl:
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
-      assignedEvents: ['Global FinTech Expo 2025'],
-      status: 'active',
-      dateAdded: 'Apr 18, 2025',
-      lastActive: '3 hours ago',
-    },
-  ]);
-
+  const [adminsList, setAdminsList] = useState<AdminMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [invites, setInvites] = useState<AdminInviteRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -145,6 +63,7 @@ export default function AdminDirectoryScreen() {
   useEffect(() => {
     async function loadData() {
       try {
+        setLoading(true);
         // 1. Fetch real admin invites from Supabase
         const { data: inviteData } = await supabase
           .from('admin_invites')
@@ -152,9 +71,20 @@ export default function AdminDirectoryScreen() {
           .order('created_at', { ascending: false });
 
         if (inviteData && inviteData.length > 0) {
-          setInvites(inviteData);
-          if (inviteData[0].code) {
-            setInviteCode(inviteData[0].code);
+          const mappedInvites: AdminInviteRecord[] = inviteData.map((inv: any) => ({
+            id: inv.id,
+            code: inv.code,
+            email: inv.email,
+            role: inv.role || 'Event Admin',
+            assigned_events: inv.assigned_events || ['All Studio Productions'],
+            max_uses: inv.max_uses || 1,
+            uses_count: inv.use_count ?? inv.uses_count ?? 0,
+            status: inv.status || 'active',
+            expires_at: inv.expires_at,
+          }));
+          setInvites(mappedInvites);
+          if (mappedInvites[0].code) {
+            setInviteCode(mappedInvites[0].code);
           }
         }
 
@@ -167,23 +97,34 @@ export default function AdminDirectoryScreen() {
 
         if (adminProfiles && adminProfiles.length > 0) {
           const mapped: AdminMember[] = adminProfiles.map((p: any) => ({
-            id: p.id,
-            name: p.display_name || p.email?.split('@')[0] || 'Studio Admin',
+            id: p.id.slice(0, 8).toUpperCase(),
+            name: p.display_name || p.email?.split('@')[0] || 'Studio Director',
             email: p.email || 'admin@purusharthstudio.com',
             role: p.role === 'super_admin' ? 'Super Admin' : 'Event Admin',
             specialty: p.role === 'super_admin' ? 'Studio Director' : 'Lead Photographer',
             avatarUrl:
               p.avatar_url ||
+              p.selfie_url ||
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
             assignedEvents: ['All Studio Productions'],
             status: (p.status as any) || 'active',
-            dateAdded: 'Permanent Roster',
+            dateAdded: p.created_at
+              ? new Date(p.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              : 'Permanent Clearance',
             lastActive: 'Online Now',
           }));
           setAdminsList(mapped);
+        } else {
+          setAdminsList([]);
         }
       } catch (err) {
         console.warn('Error loading admins/invites:', err);
+      } finally {
+        setLoading(false);
       }
     }
     loadData();
@@ -439,7 +380,25 @@ export default function AdminDirectoryScreen() {
           </Text>
         </View>
 
-        {filteredAdmins.map((adm) => (
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="small" color={AdminColors.primary} />
+            <Text style={{ marginTop: 12, fontSize: 13, color: AdminColors.secondary }}>
+              Loading administrator clearance records...
+            </Text>
+          </View>
+        ) : filteredAdmins.length === 0 ? (
+          <View style={{ padding: 48, alignItems: 'center', justifyContent: 'center' }}>
+            <AdminIcon name="admin_panel_settings" size={36} color={AdminColors.outline} />
+            <Text style={{ marginTop: 12, fontSize: 16, fontWeight: '700', color: AdminColors.onSurface }}>
+              No Administrators Found
+            </Text>
+            <Text style={{ marginTop: 6, fontSize: 13, color: AdminColors.secondary, textAlign: 'center', maxWidth: 360 }}>
+              Only the primary Super Admin is registered. Issue an invite code above to grant scoped team access.
+            </Text>
+          </View>
+        ) : (
+          filteredAdmins.map((adm) => (
           <View key={adm.id} style={styles.tableRow}>
             {/* Avatar & Clearance */}
             <View style={[styles.tdCell, { flex: 2.5 }]}>
@@ -527,8 +486,9 @@ export default function AdminDirectoryScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        ))}
-      </View>
+        ))
+      )}
+    </View>
 
       {/* Zero Trust Principle Banner */}
       <View style={styles.securityBanner}>

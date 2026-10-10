@@ -77,7 +77,7 @@ export default function AdminEventsDirectoryScreen() {
           total_photos: e.total_photos || 0,
           faces_indexed: 0,
           attendees_enrolled: 0,
-          assigned_admins: [{ name: 'Aaditya Purusharth', initials: 'AP' }],
+          assigned_admins: [{ name: 'Studio Superadmin', initials: 'SA' }],
         }));
         setEvents(mapped);
       } else {
@@ -142,7 +142,7 @@ export default function AdminEventsDirectoryScreen() {
           total_photos: 0,
           faces_indexed: 0,
           attendees_enrolled: 0,
-          assigned_admins: [{ name: 'Aaditya Purusharth', initials: 'AP' }],
+          assigned_admins: [{ name: 'Studio Superadmin', initials: 'SA' }],
         };
 
         setEvents((prev) => [newEventItem, ...prev]);
@@ -230,9 +230,9 @@ export default function AdminEventsDirectoryScreen() {
             <Text style={styles.bentoValue}>
               {events
                 .reduce((acc, curr) => acc + (curr.total_photos || 0), 0)
-                .toLocaleString() || '48,293'}
+                .toLocaleString()}
             </Text>
-            <Text style={styles.bentoSubCode}>457.2 GB AWS S3 / R2</Text>
+            <Text style={styles.bentoSubCode}>Cloudflare R2 Storage</Text>
           </View>
           <View style={styles.bentoIconBox}>
             <AdminIcon name="photo_library" size={24} color={AdminColors.primary} />
@@ -245,7 +245,7 @@ export default function AdminEventsDirectoryScreen() {
             <Text style={styles.bentoValue}>
               {events
                 .reduce((acc, curr) => acc + (curr.faces_indexed || 0), 0)
-                .toLocaleString() || '14,640'}
+                .toLocaleString()}
             </Text>
             <View style={styles.bentoGrowthRow}>
               <AdminIcon name="face" size={14} color={AdminColors.primary} />

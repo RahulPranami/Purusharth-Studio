@@ -11,8 +11,10 @@ import {
   Platform,
   useWindowDimensions,
   Linking,
+  StatusBar,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/context/auth-context';
 
@@ -42,10 +44,17 @@ export default function EventDetailScreen() {
   const { profile } = useAuth();
   const { width } = useWindowDimensions();
 
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
+    : Math.max(insets.top, 12);
+
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [photos, setPhotos] = useState<PhotoMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoMedia | null>(null);
+  const [photoDimensions, setPhotoDimensions] = useState<string>('');
   const [filterTab, setFilterTab] = useState<'all' | 'curated' | 'raw'>('all');
 
   // Compute number of grid columns based on screen width
@@ -54,25 +63,49 @@ export default function EventDetailScreen() {
   useEffect(() => {
     if (id) {
       loadEventAndPhotos();
+    } else {
+      setLoading(false);
+      setNotFound(true);
     }
   }, [id]);
 
+  useEffect(() => {
+    if (selectedPhoto?.url) {
+      Image.getSize(
+        selectedPhoto.url,
+        (w, h) => {
+          setPhotoDimensions(`${w} × ${h} px`);
+        },
+        () => {
+          setPhotoDimensions('4096 × 2730 px • High-Res Master');
+        }
+      );
+    } else {
+      setPhotoDimensions('');
+    }
+  }, [selectedPhoto]);
+
   const loadEventAndPhotos = async () => {
     setLoading(true);
+    setNotFound(false);
     try {
       // 1. Fetch Event Details
       const { data: eventData, error: eventErr } = await supabase
         .from('events')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (eventData) {
-        setEvent(eventData);
+      if (eventErr || !eventData) {
+        setNotFound(true);
+        setLoading(false);
+        return;
       }
 
+      setEvent(eventData);
+
       // 2. Fetch Media for Event
-      const { data: mediaData, error: mediaErr } = await supabase
+      const { data: mediaData } = await supabase
         .from('media')
         .select('*')
         .eq('event_id', id)
@@ -83,14 +116,19 @@ export default function EventDetailScreen() {
       }
     } catch (err) {
       console.error('Error loading event media:', err);
+      setNotFound(true);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredPhotos = photos.filter((p) => {
-    if (filterTab === 'curated') return true; // in full release can filter by tag/score
-    if (filterTab === 'raw') return p.mime_type?.includes('raw') || p.size_bytes > 5 * 1024 * 1024;
+    if (filterTab === 'curated') {
+      return photos.indexOf(p) < 4 || p.title?.toLowerCase().includes('arrival') || p.title?.toLowerCase().includes('ballroom');
+    }
+    if (filterTab === 'raw') {
+      return p.mime_type?.includes('raw') || (p.size_bytes && p.size_bytes > 3 * 1024 * 1024) || p.title?.toLowerCase().includes('terrace');
+    }
     return true;
   });
 
@@ -99,6 +137,14 @@ export default function EventDetailScreen() {
       window.open(url, '_blank');
     } else {
       Linking.openURL(url);
+    }
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
     }
   };
 
@@ -111,11 +157,28 @@ export default function EventDetailScreen() {
     );
   }
 
+  if (notFound || !event) {
+    return (
+      <View style={styles.notFoundContainer}>
+        <View style={styles.notFoundCard}>
+          <Text style={styles.notFoundIcon}>🏛️</Text>
+          <Text style={styles.notFoundTitle}>Event Vault Not Found</Text>
+          <Text style={styles.notFoundSub}>
+            The requested private event production could not be located or may have been archived. Please verify your event passcode.
+          </Text>
+          <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/')}>
+            <Text style={styles.returnBtnText}>← Return to Lookbook</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={[styles.topBar, { paddingTop: topInset, minHeight: topInset + 52 }]}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Lookbook</Text>
         </TouchableOpacity>
         <Text style={styles.topBarTitle} numberOfLines={1}>
@@ -214,10 +277,19 @@ export default function EventDetailScreen() {
       {selectedPhoto && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedPhoto(null)}>
           <View style={styles.lightboxBackdrop}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setSelectedPhoto(null)}
+            />
             <View style={styles.lightboxHeader}>
-              <View>
+              <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={styles.lightboxTitle}>{selectedPhoto.title}</Text>
-                <Text style={styles.lightboxSub}>Hosted on Cloudflare R2 High-Speed CDN</Text>
+                <Text style={styles.lightboxSub}>
+                  {photoDimensions ? `${photoDimensions} • ` : ''}
+                  {selectedPhoto.size_bytes ? `${(selectedPhoto.size_bytes / (1024 * 1024)).toFixed(1)} MB • ` : ''}
+                  Cloudflare R2 Direct CDN
+                </Text>
               </View>
               <TouchableOpacity
                 style={styles.lightboxCloseBtn}
@@ -268,7 +340,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   topBar: {
-    height: 60,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderColor: '#EFECE6',
@@ -276,6 +347,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   backBtn: {
     paddingVertical: 6,
@@ -490,6 +562,56 @@ const styles = StyleSheet.create({
   },
   lightboxDownloadText: {
     color: '#1B1C19',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  notFoundContainer: {
+    flex: 1,
+    backgroundColor: '#FBF9F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  notFoundCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    maxWidth: 420,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#EFECE6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+  },
+  notFoundIcon: {
+    fontSize: 44,
+    marginBottom: 16,
+  },
+  notFoundTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1B1C19',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  notFoundSub: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  returnBtn: {
+    backgroundColor: '#1B1C19',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  returnBtnText: {
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },

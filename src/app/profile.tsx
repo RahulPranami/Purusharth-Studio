@@ -10,8 +10,10 @@ import {
   Platform,
   Image,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/auth-context';
 import { uploadToR2 } from '@/services/r2';
@@ -19,6 +21,11 @@ import { uploadToR2 } from '@/services/r2';
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, profile, loading: authLoading, updateProfile, signOut } = useAuth();
+
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
+    : Math.max(insets.top, 12);
 
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
@@ -28,6 +35,12 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (profile) {
@@ -152,7 +165,7 @@ export default function ProfileScreen() {
     <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.container}>
       <View style={styles.contentWrap}>
         {/* Navigation Bar */}
-        <View style={styles.navBar}>
+        <View style={[styles.navBar, { paddingTop: topInset }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.backButtonText}>← Lookbook</Text>
           </TouchableOpacity>
@@ -323,7 +336,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF9F4',
   },
   scrollContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 0,
     paddingBottom: 60,
     alignItems: 'center',
   },

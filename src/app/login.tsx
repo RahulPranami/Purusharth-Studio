@@ -10,13 +10,20 @@ import {
   Platform,
   Image,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/auth-context';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signInWithOtp, verifyOtp } = useAuth();
+
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 16
+    : Math.max(insets.top, 16);
 
   const [isRegister, setIsRegister] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -81,8 +88,30 @@ export default function LoginScreen() {
 
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.container}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.scrollContainer,
+        { paddingTop: topInset, paddingBottom: Math.max(insets.bottom, 24) },
+      ]}
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.card}>
+        {/* Back navigation */}
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
+          style={styles.backButton}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backButtonText}>← Lookbook</Text>
+        </TouchableOpacity>
+
         {/* Brand Emblem */}
         <View style={styles.logoContainer}>
           <Image
@@ -277,10 +306,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#FBF9F4',
   },
   scrollContainer: {
-    padding: 20,
-    minHeight: '100%',
+    paddingHorizontal: 20,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginBottom: 8,
+    borderRadius: 6,
+  },
+  backButtonText: {
+    fontSize: 13,
+    color: '#755A2A',
+    fontWeight: '600',
   },
   card: {
     width: '100%',

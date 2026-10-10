@@ -12,7 +12,7 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminIcon } from '@/components/admin/AdminIcon';
 import { AdminColors, AdminTypography } from '@/constants/admin-theme';
-import { uploadToR2 } from '@/services/r2';
+import { uploadToR2, recordMediaInDatabase } from '@/services/r2';
 import { supabase } from '@/utils/supabase';
 
 interface QueueItem {
@@ -137,22 +137,22 @@ export default function AdminPhotoUploadsScreen() {
           }
         );
 
-        // Store into Supabase `media` table
+        // Store into Supabase `media` table and sync total_photos
         try {
-          await supabase.from('media').insert({
-            event_id: selectedEventId.startsWith('default')
+          await recordMediaInDatabase({
+            eventId: selectedEventId.startsWith('default')
               ? null
               : selectedEventId,
-            file_name: uploadRes.fileName,
-            file_size: uploadRes.size,
-            r2_key: uploadRes.key,
+            objectKey: uploadRes.key,
             url: uploadRes.url,
-            content_type: uploadRes.contentType,
-            faces_count: Math.floor(Math.random() * 12) + 2,
+            sizeBytes: uploadRes.size,
+            mimeType: uploadRes.contentType,
+            title: uploadRes.fileName,
+            mediaType: 'photo',
             status: 'ready',
           });
-        } catch {
-          // ignore table constraints if mock
+        } catch (dbErr) {
+          console.warn('Error recording media in Supabase:', dbErr);
         }
 
         // Set completed in queue

@@ -9,8 +9,10 @@ import {
   useWindowDimensions,
   Platform,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { AdminIcon } from './AdminIcon';
 import { AdminColors, AdminTypography } from '@/constants/admin-theme';
@@ -32,6 +34,10 @@ export function AdminLayout({
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'android'
+    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
+    : Math.max(insets.top, 12);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { profile, signOut } = useAuth();
@@ -221,7 +227,7 @@ export function AdminLayout({
               activeOpacity={1}
               onPress={() => setMobileMenuOpen(false)}
             />
-            <View style={styles.mobileDrawerContent}>
+            <View style={[styles.mobileDrawerContent, { paddingTop: topInset }]}>
               <TouchableOpacity
                 style={styles.closeDrawerBtn}
                 onPress={() => setMobileMenuOpen(false)}
@@ -237,7 +243,16 @@ export function AdminLayout({
       {/* Main Container Area */}
       <View style={[styles.mainArea, isDesktop && styles.mainAreaDesktop]}>
         {/* Top Header */}
-        <View style={styles.topHeader}>
+        <View
+          style={[
+            styles.topHeader,
+            !isDesktop && {
+              paddingTop: topInset,
+              height: undefined,
+              minHeight: topInset + 54,
+            },
+          ]}
+        >
           {/* Left: Mobile hamburger & Breadcrumbs */}
           <View style={styles.headerLeft}>
             {!isDesktop && (
