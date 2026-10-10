@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"background":"#f9f9ff","primary-container":"#2563eb","surface-variant":"#dce2f7","on-tertiary-fixed":"#001a42","surface-dim":"#d3daef","surface-container-high":"#e1e8fd","error":"#ba1a1a","secondary-fixed":"#dae2fd","on-tertiary-fixed-variant":"#004395","inverse-on-surface":"#edf0ff","primary":"#004ac6","surface-tint":"#0053db","primary-fixed":"#dbe1ff","surface-container-low":"#f1f3ff","on-secondary-fixed":"#131b2e","secondary-container":"#dae2fd","tertiary":"#0051b1","error-container":"#ffdad6","tertiary-fixed":"#d8e2ff","surface-bright":"#f9f9ff","surface-container-highest":"#dce2f7","tertiary-container":"#0f69dc","on-background":"#141b2b","on-secondary-fixed-variant":"#3f465c","on-primary-container":"#eeefff","on-surface-variant":"#434655","on-primary":"#ffffff","on-error":"#ffffff","on-secondary":"#ffffff","inverse-surface":"#293040","tertiary-fixed-dim":"#adc6ff","on-primary-fixed":"#00174b","primary-fixed-dim":"#b4c5ff","surface":"#f9f9ff","surface-container-lowest":"#ffffff","on-primary-fixed-variant":"#003ea8","on-tertiary-container":"#edf0ff","on-secondary-container":"#5c647a","surface-container":"#e9edff","inverse-primary":"#b4c5ff","on-surface":"#141b2b","outline-variant":"#c3c6d7","secondary-fixed-dim":"#bec6e0","secondary":"#565e74","on-tertiary":"#ffffff","outline":"#737686","on-error-container":"#93000a"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter":"1.5rem","gutter-mobile":"1rem","space-md":"1rem","space-xl":"2rem","space-xs":"0.25rem","space-lg":"1.5rem","margin-mobile":"1rem","space-sm":"0.5rem","margin":"2rem"},fontFamily:{"headline-sm":["Inter"],"headline-lg":["Inter"],"code-sm":["JetBrains Mono"],"label-sm":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"body-lg":["Inter"],"body-sm":["Inter"],"label-xs":["Inter"],"headline-xl":["Inter"]},fontSize:{"headline-sm":["18px",{"lineHeight":"24px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"code-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"label-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"500"}],"label-md":["14px",{"lineHeight":"20px","letterSpacing":"-0.006em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"-0.006em","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"label-xs":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-60 bg-surface-container-lowest z-50 flex flex-col justify-between border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center gap-space-sm border-b border-outline-variant/20"><div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm"><span class="material-symbols-outlined text-[20px]">center_focus_strong</span></div><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none truncate">Event Photos</span><span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary mt-0.5 truncate">Superadmin Console</span></div></div><div class="px-space-sm pt-space-md pb-space-xs"><span class="px-space-sm font-label-xs text-label-xs uppercase tracking-wider text-outline">Platform Operations</span></div><nav class="flex flex-col gap-0.5 px-space-sm" data-active-classes="bg-surface-container text-primary font-label-md rounded-lg"><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">space_dashboard</span><span>Dashboard</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="events" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">calendar_month</span><span>Events</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high font-label-xs text-label-xs text-on-surface-variant">12</span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="photo-uploads" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">cloud_upload</span><span>Photo Uploads</span></div><span class="px-1.5 py-0.5 rounded-full bg-secondary-container font-label-xs text-label-xs text-on-secondary-fixed">Active</span></a><a aria-current="page" class="flex items-center justify-between px-space-sm py-2 transition-colors bg-surface-container text-primary font-label-md rounded-lg" data-path="admins" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">admin_panel_settings</span><span>Admins</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="attendees" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">group</span><span>Attendees</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="storage-and-usage" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">database</span><span>Storage &amp; Usage</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="settings" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">settings</span><span>Settings</span></div></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><div class="flex items-center justify-between p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"><div class="flex items-center gap-space-sm min-w-0"><div class="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface-container-lowest"></span></div><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-on-surface font-semibold truncate leading-none">Alex Vance</span><span class="font-code-sm text-code-sm text-secondary truncate mt-0.5 leading-none">superadmin@eventphotos.io</span></div></div><div class="flex items-center gap-0.5 shrink-0"><button class="p-1 text-secondary hover:text-on-surface rounded transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">unfold_more</span></button><button class="p-1 text-secondary hover:text-error rounded transition-colors" title="Sign out" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div></div></div></aside><div class="pl-60 min-h-screen flex flex-col"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/30 z-40 px-space-lg flex items-center justify-between gap-space-md shadow-[0_1px_6px_rgba(0,0,0,0.02)]"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-1.5 font-label-md text-label-md text-secondary"><span class="hover:text-on-surface transition-colors cursor-pointer">Console</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-on-surface font-medium capitalize">Superadmin Overview</span></div></div><div class="flex items-center gap-space-md"><div class="relative w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span><input class="w-full h-9 pl-9 pr-12 rounded-lg bg-surface border border-outline-variant/40 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search events, admins, photos..." type="text"/><span class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-outline-variant/50 font-code-sm text-code-sm text-secondary bg-surface-container-lowest">⌘K</span></div><div class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="font-label-xs text-label-xs text-emerald-700">Worker Cluster: 99.8% Healthy</span></div><button class="relative p-2 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-xs text-[10px]">3</span></button><div class="h-5 w-px bg-outline-variant/40"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-background flex-1 px-space-lg py-space-lg"><div class="flex flex-col w-full">
+<!-- Top Bar / Breadcrumb / Actions -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-code-sm text-code-sm uppercase tracking-wider font-semibold">RBAC Engine v2.4</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Policy Synced
+        </span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Admins</h1>
+<p class="font-body-md text-body-md text-secondary mt-0.5">Manage team members, staff photographers, and granular event-level permissions.</p>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="h-9 px-3.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container font-label-md text-label-md flex items-center gap-2 transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">download</span>
+<span>Export Audit CSV</span>
+</button>
+<button class="h-9 px-4 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-2 shadow-sm transition-all" id="open-invite-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span>+ Create Admin Invitation</span>
+</button>
+</div>
+</div>
+<!-- KPI Summary Bento Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md mb-space-lg">
+<!-- Card 1: Total Active Admins -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-primary-fixed/20 pointer-events-none group-hover:scale-110 transition-transform"></div>
+<div class="flex items-start justify-between mb-4">
+<div>
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary">Active Credentials</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-xl text-headline-xl text-on-surface tabular-nums font-bold">18</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">admins</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">verified_user</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 bg-surface-container-lowest">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-code-sm text-code-sm font-semibold">12 Events Covered</span>
+<span class="font-body-sm text-body-sm text-secondary">100% quorum</span>
+</div>
+<span class="font-code-sm text-code-sm text-secondary">pool/01</span>
+</div>
+</div>
+<!-- Card 2: Pending Invitations -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-secondary-container/30 pointer-events-none group-hover:scale-110 transition-transform"></div>
+<div class="flex items-start justify-between mb-4">
+<div>
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary">Pending Onboarding</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-xl text-headline-xl text-on-surface tabular-nums font-bold">3</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">invitations</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">hourglass_top</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 bg-surface-container-lowest">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-code-sm text-code-sm font-semibold">Awaiting Acceptance</span>
+<span class="font-body-sm text-body-sm text-secondary">Avg TTL: 38h</span>
+</div>
+<span class="font-code-sm text-code-sm text-secondary">tokens/temp</span>
+</div>
+</div>
+<!-- Card 3: Role Clearance Boundaries -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-surface-variant/40 pointer-events-none group-hover:scale-110 transition-transform"></div>
+<div class="flex items-start justify-between mb-4">
+<div>
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary">Scope Isolation</span>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="font-headline-xl text-headline-xl text-on-surface tabular-nums font-bold">18</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Event Admins</span>
+</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">shield_lock</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 bg-surface-container-lowest">
+<div class="flex items-center gap-1.5 font-label-xs text-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary">lock</span>
+<span>Superadmin privileges restricted to Studio Owner</span>
+</div>
+<span class="font-code-sm text-code-sm text-secondary">enforce:strict</span>
+</div>
+</div>
+</div>
+<!-- Filter & Action Controls Bar -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm mb-space-md flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-md">
+<div class="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
+<!-- Search Input -->
+<div class="relative flex-1 min-w-[240px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span>
+<input class="w-full h-9 pl-9 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary shadow-inner" placeholder="Search admins by name, email, or token..." type="text"/>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] text-outline cursor-pointer hover:text-on-surface">close</span>
+</div>
+<!-- Event Filter Dropdown -->
+<div class="relative min-w-[160px]">
+<select class="w-full h-9 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary">
+<option>All Events (12)</option>
+<option>Annual Tech Summit 2025</option>
+<option>AI Innovators Gala</option>
+<option>Global FinTech Expo 2025</option>
+<option>The Royal Palace Wedding</option>
+<option>Horizon Music Festival</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] text-secondary pointer-events-none">expand_more</span>
+</div>
+<!-- Status Filter -->
+<div class="relative min-w-[140px]">
+<select class="w-full h-9 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary">
+<option>All Statuses</option>
+<option>Active</option>
+<option>Pending Invite</option>
+<option>Suspended</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] text-secondary pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Right Side Tools: Sorting & Bulk Actions -->
+<div class="flex items-center gap-space-sm justify-end shrink-0">
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low">
+<span class="material-symbols-outlined text-[16px] text-secondary">sort</span>
+<span class="font-label-xs text-label-xs text-secondary uppercase tracking-wider">Sort:</span>
+<select class="bg-transparent font-label-sm text-label-sm text-on-surface focus:outline-none cursor-pointer">
+<option>Recently Active</option>
+<option>Date Added (Newest)</option>
+<option>Alphabetical (A-Z)</option>
+<option>Assigned Events (High-Low)</option>
+</select>
+</div>
+<button class="h-9 w-9 rounded-lg bg-surface-container-low hover:bg-surface-container text-secondary flex items-center justify-center transition-colors" title="Reload List" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Admin Directory Data Table Container -->
+<div class="rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden mb-space-xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[960px]">
+<thead>
+<tr class="h-10 bg-surface-container-low text-secondary font-label-xs text-label-xs uppercase tracking-wider select-none">
+<th class="px-space-md font-medium w-12 text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</th>
+<th class="px-space-md font-medium">Admin &amp; Clearance</th>
+<th class="px-space-md font-medium">Email Address</th>
+<th class="px-space-md font-medium">Assigned Events</th>
+<th class="px-space-md font-medium">Status</th>
+<th class="px-space-md font-medium">Date Added</th>
+<th class="px-space-md font-medium">Last Active</th>
+<th class="px-space-md font-medium text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<!-- Row 1: Sarah Chen -->
+<tr class="h-16 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-9 h-9 rounded-full overflow-hidden bg-primary-fixed shrink-0 shadow-sm flex items-center justify-center font-label-md text-primary font-bold">
+<img class="w-full h-full object-cover" data-alt="Close-up professional portrait photo of Sarah Chen, a female Asian lead photo operations admin with sleek black hair, wearing modern slate blazer, subtle studio lighting and sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8y73ao5BNJ6MZC6wyo5qMDQtdYhZJXzFNLdYRbx_sNDitzl0KE_Jry_g034SlR4leus-uteyHlCTqNCUzyInpSfeF31tAdE-oipY6RhVcm2NIvYoIPR5ZLr4W4vQ9PBEwDdrMrhpFzMDniZR5p_2IZnlVaL2zHfSo41DT88bhVyZk7SNNRN2TZyGznAZktTY66cnEwfSNHJtAkWFhd4tnziVLOyoI9tDvxNQ4xqF8gNZsKu0pbB12zQ"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Sarah Chen</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-code-sm text-[10px] font-semibold">ID: 804</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-[10px] font-medium leading-none">Event Admin</span>
+<span class="font-code-sm text-code-sm text-secondary text-[11px]">• Lead Shooter</span>
+</div>
+</div>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-code-sm text-on-surface">sarah.c@eventphotos.io</span>
+<button class="text-secondary hover:text-primary transition-colors" title="Copy email" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex flex-wrap items-center gap-1 max-w-xs">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[140px]" title="Annual Tech Summit 2025">Annual Tech Summit 2025</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[130px]" title="AI Innovators Gala">AI Innovators Gala</span>
+<span class="px-1.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-code-sm text-[10px] font-semibold">2</span>
+</div>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+              </span>
+</td>
+<td class="px-space-md font-body-sm text-body-sm text-secondary">
+              May 10, 2025
+            </td>
+<td class="px-space-md">
+<div class="flex items-center gap-1 text-emerald-700 font-label-xs text-label-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>12 mins ago</span>
+</div>
+</td>
+<td class="px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors" title="Edit Permissions" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors" title="View Audit Activity" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error rounded-lg hover:bg-error-container transition-colors" title="Revoke Access" type="button">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Marcus Kane -->
+<tr class="h-16 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-9 h-9 rounded-full overflow-hidden bg-surface-container shrink-0 shadow-sm flex items-center justify-center font-label-md text-secondary font-bold">
+<img class="w-full h-full object-cover" data-alt="High quality studio headshot portrait of Marcus Kane, male photographer in mid-thirties with trimmed beard, wearing dark crewneck, crisp ambient lighting and corporate photography aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ7MiYEtkdSNBYt5MUWeqxdJRQ97-5cVz_tpjWq0tA90kl6woXzgFhTL9F3oDLGaIK5SOu_iVDtXpkD4TRGaCLceCTRuslTmwV6EFNreS5V6-rBvLKVHNNzknmHhTqCW0c1Rr3nXlN-wybVSnJSl5muGJPId2RoxBkVMH9Bu7o1D-OfHuRWtmrC68C87FnsQpPLGIxJXD1QptwD8yul1Vw-BSz0QhD0Tx3qDcsMBAY-v7YJzxZaA-9JA"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Marcus Kane</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-code-sm text-[10px] font-semibold">ID: 809</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-[10px] font-medium leading-none">Event Admin</span>
+<span class="font-code-sm text-code-sm text-secondary text-[11px]">• Contract Staff</span>
+</div>
+</div>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-code-sm text-on-surface">marcus.k@photopulse.com</span>
+<button class="text-secondary hover:text-primary transition-colors" title="Copy email" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex flex-wrap items-center gap-1 max-w-xs">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[180px]" title="Annual Tech Summit 2025">Annual Tech Summit 2025</span>
+<span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-secondary font-code-sm text-[10px] font-medium">1 event</span>
+</div>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+              </span>
+</td>
+<td class="px-space-md font-body-sm text-body-sm text-secondary">
+              May 14, 2025
+            </td>
+<td class="px-space-md">
+<div class="flex items-center gap-1 text-on-surface font-label-xs text-label-xs font-medium">
+<span class="material-symbols-outlined text-[14px] text-secondary">schedule</span>
+<span>2 hours ago</span>
+</div>
+</td>
+<td class="px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors" title="Edit Permissions" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors" title="View Audit Activity" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error rounded-lg hover:bg-error-container transition-colors" title="Revoke Access" type="button">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Vikram Sharma -->
+<tr class="h-16 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-9 h-9 rounded-full overflow-hidden bg-tertiary-fixed shrink-0 shadow-sm flex items-center justify-center font-label-md text-tertiary font-bold">
+<img class="w-full h-full object-cover" data-alt="Polished corporate photo of Vikram Sharma, Indian luxury event photographer in formal navy shirt, warm professional lighting, calm confident expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPX1hRTsiUy8lPqKE71Nz1tWhv5-ngOLRKzCmJKtGLc5P3qY8rClNCSQPt0NsqAnn_jmrqcL5tG__U_zB-WlHfj_zODRqjZguX5zfefDdf-FWgrIoFsTHTaveR7xUGh9YyE5pRiC5b_a96PoPsCiv-QngRwkiFnDtQYas5PTW0bpRzJY3NBcs3uaYsOS4JE5-KHAVUx_kvPpM1sWkxZdtX-Pd-jQsUKFmT3RxODzJWGqxl8Q-NZYugGA"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Vikram Sharma</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-code-sm text-[10px] font-semibold">ID: 812</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-[10px] font-medium leading-none">Event Admin</span>
+<span class="font-code-sm text-code-sm text-secondary text-[11px]">• Wedding Guild</span>
+</div>
+</div>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-code-sm text-on-surface">vikram@royalweddings.in</span>
+<button class="text-secondary hover:text-primary transition-colors" title="Copy email" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex flex-wrap items-center gap-1 max-w-xs">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[140px]" title="The Royal Palace Wedding">The Royal Palace Wedding</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[120px]" title="Udaipur Sangeet">Udaipur Sangeet</span>
+<span class="px-1.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-code-sm text-[10px] font-semibold">2</span>
+</div>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+              </span>
+</td>
+<td class="px-space-md font-body-sm text-body-sm text-secondary">
+              May 02, 2025
+            </td>
+<td class="px-space-md">
+<div class="flex items-center gap-1 text-on-surface font-label-xs text-label-xs font-medium">
+<span class="material-symbols-outlined text-[14px] text-secondary">schedule</span>
+<span>Yesterday</span>
+</div>
+</td>
+<td class="px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors" title="Edit Permissions" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors" title="View Audit Activity" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error rounded-lg hover:bg-error-container transition-colors" title="Revoke Access" type="button">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Elena Rostova (Pending Invite) -->
+<tr class="h-16 hover:bg-surface-container-low/60 transition-colors bg-amber-50/20">
+<td class="px-space-md text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-surface-container-high text-secondary flex items-center justify-center font-label-md text-label-md font-semibold shrink-0 border border-dashed border-outline-variant">
+                  ER
+                </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">Elena Rostova</span>
+<span class="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-code-sm text-[10px] font-semibold">Token Pending</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-[10px] font-medium leading-none">Event Admin</span>
+<span class="font-code-sm text-code-sm text-amber-700 text-[11px]">• Expires in 48h</span>
+</div>
+</div>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-code-sm text-on-surface">elena.r@agencycreatives.com</span>
+<button class="text-secondary hover:text-primary transition-colors" title="Copy email" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex flex-wrap items-center gap-1 max-w-xs">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[180px]" title="Global FinTech Expo 2025">Global FinTech Expo 2025</span>
+<span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-secondary font-code-sm text-[10px] font-medium">1 event</span>
+</div>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-label-xs text-label-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Pending Invite
+              </span>
+</td>
+<td class="px-space-md font-body-sm text-body-sm text-secondary">
+              May 26, 2025
+            </td>
+<td class="px-space-md">
+<span class="font-code-sm text-code-sm text-outline italic">Never</span>
+</td>
+<td class="px-space-md text-right">
+<div class="inline-flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded-md bg-primary-fixed text-on-primary-fixed hover:bg-primary hover:text-on-primary font-label-xs text-label-xs font-semibold transition-colors shadow-sm flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">forward_to_inbox</span>
+<span>Resend Invite</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error rounded-lg hover:bg-error-container transition-colors" title="Cancel Invitation" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: David Miller -->
+<tr class="h-16 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md text-center">
+<input class="rounded text-primary focus:ring-0 cursor-pointer w-3.5 h-3.5 bg-surface" type="checkbox"/>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="relative w-9 h-9 rounded-full overflow-hidden bg-surface-container shrink-0 shadow-sm flex items-center justify-center font-label-md text-secondary font-bold">
+<img class="w-full h-full object-cover" data-alt="Headshot photo of David Miller, festival concert photographer wearing dark hoodie with camera strap visible, outdoor festival twilight background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSG5_7vWMfqDEIELM73VSsfAziak1c9Pel5-Yw9gGAB9ysqV9WsmwX1afedxmtZ6eBtNp9VoHJ46gcqdDVN3evLaYoPXkLfPvhZUU9Z12yLg8rvi-wFaqnKOQJ7Hndz8PxLpyYnpwZhL8yZXdtL9_NjckMQVzLJ1zvgb2xcfVM0lv3cAJH_yS_ZTceeFD_fGI3oea9xG8MLlfKYusz6T2n7yZLDNAfwASH3mAFrx2T1_fTIJMfq8adCw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">David Miller</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-code-sm text-[10px] font-semibold">ID: 818</span>
+</div>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-[10px] font-medium leading-none">Event Admin</span>
+<span class="font-code-sm text-code-sm text-secondary text-[11px]">• Freelance Staff</span>
+</div>
+</div>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-code-sm text-on-surface">david.m@freelancephoto.co</span>
+<button class="text-secondary hover:text-primary transition-colors" title="Copy email" type="button">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</td>
+<td class="px-space-md">
+<div class="flex flex-wrap items-center gap-1 max-w-xs">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-xs text-label-xs truncate max-w-[180px]" title="Horizon Music Festival">Horizon Music Festival</span>
+<span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-secondary font-code-sm text-[10px] font-medium">1 event</span>
+</div>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+              </span>
+</td>
+<td class="px-space-md font-body-sm text-body-sm text-secondary">
+              May 20, 2025
+            </td>
+<td class="px-space-md">
+<div class="flex items-center gap-1 text-secondary font-label-xs text-label-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>3 days ago</span>
+</div>
+</td>
+<td class="px-space-md text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-primary rounded-lg hover:bg-surface-container transition-colors" title="Edit Permissions" type="button">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container transition-colors" title="View Audit Activity" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error rounded-lg hover:bg-error-container transition-colors" title="Revoke Access" type="button">
+<span class="material-symbols-outlined text-[18px]">person_remove</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="h-12 px-space-md bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-secondary">Showing</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">1-5</span>
+<span class="font-body-sm text-body-sm text-secondary">of 18 event admins</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded bg-surface-container text-outline hover:text-on-surface font-label-sm text-label-sm disabled:opacity-40" disabled="" type="button">Previous</button>
+<span class="px-2 py-0.5 rounded bg-primary text-on-primary font-code-sm text-code-sm font-semibold">1</span>
+<button class="px-2 py-0.5 rounded text-secondary hover:bg-surface-container font-code-sm text-code-sm" type="button">2</button>
+<button class="px-2 py-0.5 rounded text-secondary hover:bg-surface-container font-code-sm text-code-sm" type="button">3</button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-sm text-label-sm transition-colors" type="button">Next</button>
+</div>
+</div>
+</div>
+<!-- Real-Time Access Boundary Security Notice Banner -->
+<div class="p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md mb-space-lg">
+<div class="flex items-start gap-space-sm max-w-3xl">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface font-semibold">Superadmin Zero-Trust Principle</h4>
+<p class="font-body-sm text-body-sm text-secondary mt-0.5">
+          Event Admins are strictly scoped to upload media, review facial matches, and download approved hi-res packages for their assigned events only. Global platform billing, AI embedding model re-indexing, and webhook configurations remain restricted to Studio Owner.
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-variant transition-colors" type="button">
+        Audit Log Matrix
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold hover:bg-primary hover:text-on-primary transition-colors" type="button">
+        Security Settings
+      </button>
+</div>
+</div>
+<!-- Slide-Over High Fidelity Drawer / Modal Showcase: "Create Admin Invitation" -->
+<div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-sm z-50 transition-opacity flex justify-end" id="invite-drawer-backdrop">
+<!-- Slide-over panel -->
+<div class="w-full max-w-xl h-full bg-surface-container-lowest shadow-2xl flex flex-col justify-between overflow-y-auto">
+<!-- Drawer Header -->
+<div class="p-space-lg bg-surface-container-lowest sticky top-0 z-10 shadow-sm flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-primary font-bold">Scoped Access Grant</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Invite Event Admin</h2>
+<p class="font-body-sm text-body-sm text-secondary mt-1">Send an invitation link or passcode. Admins can only view and manage events assigned to them.</p>
+</div>
+<button class="p-1.5 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" id="close-invite-btn" title="Close Panel" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Drawer Form Body -->
+<div class="p-space-lg flex-1 flex flex-col gap-space-lg">
+<!-- Field 1: Admin Email -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center justify-between">
+<span>Admin Email Address <span class="text-error">*</span></span>
+<span class="font-code-sm text-code-sm text-secondary">Will receive verification magic-link</span>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">mail</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary shadow-inner" placeholder="colleague@studio.com" type="email" value="nathan.cross@lenscraft.photos"/>
+</div>
+</div>
+<!-- Field 2: Assigned Events (Multi-Select Tags) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-semibold flex items-center justify-between">
+<span>Assigned Event(s) <span class="text-error">*</span></span>
+<span class="font-label-xs text-label-xs text-primary font-medium cursor-pointer hover:underline">+ Assign All Active</span>
+</label>
+<!-- Multi-tag input box -->
+<div class="p-2 min-h-12 rounded-lg bg-surface-container-low shadow-inner flex flex-wrap items-center gap-1.5">
+<!-- Tag 1 -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Annual Tech Summit 2025</span>
+<button class="text-secondary hover:text-on-surface" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<!-- Tag 2 -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Global FinTech Expo 2025</span>
+<button class="text-secondary hover:text-on-surface" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>
+</span>
+<!-- Search inline input -->
+<div class="flex-1 min-w-[120px] flex items-center">
+<input class="w-full h-7 px-2 bg-transparent text-on-surface font-body-sm text-body-sm placeholder:text-outline focus:outline-none" placeholder="Add event..." type="text"/>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-secondary">Admin credentials will not allow access to unassigned albums or revenue streams.</span>
+</div>
+<!-- Field 3: Invitation Expiry -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-semibold">Invitation Expiry</label>
+<div class="relative">
+<select class="w-full h-10 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary shadow-inner">
+<option>7 Days (Standard)</option>
+<option selected="">48 Hours (High Security)</option>
+<option>30 Days (Extended)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-on-surface font-semibold">Single-Use Passcode</label>
+<div class="flex items-center h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-code-sm text-code-sm font-semibold tracking-wider justify-between shadow-inner">
+<span class="text-primary">ADMIN-INV-8492-XQ</span>
+<button class="text-secondary hover:text-primary" title="Regenerate token" type="button">
+<span class="material-symbols-outlined text-[16px]">autorenew</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Field 4: Permission Level Matrix Preview -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-sm flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface font-bold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-primary">badge</span>
+              Assigned Role: Event Admin
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-code-sm text-[10px] font-bold">Standard</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            Upload media, view assigned event attendees, manage live ingest, and resolve facial-match ambiguities. Cannot create new events, access billing, or invite other admins.
+          </p>
+</div>
+<!-- Generated Token Box & Shareable Link -->
+<div class="p-space-md rounded-xl bg-surface-container-high/60 shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Direct Secure Activation URL</span>
+<span class="font-code-sm text-code-sm text-emerald-700 font-semibold">Ready to copy</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex-1 h-9 px-3 rounded-lg bg-surface-container-lowest text-on-surface font-code-sm text-[12px] truncate flex items-center select-all shadow-inner">
+              https://app.eventphotos.io/join?token=ADMIN-INV-8492-XQ
+            </div>
+<button class="h-9 px-3.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-sm text-label-sm flex items-center gap-1.5 shrink-0 shadow-sm transition-all" id="copy-link-btn" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copy Link</span>
+</button>
+</div>
+<!-- Security Warning note -->
+<div class="flex items-start gap-2 pt-1">
+<span class="material-symbols-outlined text-[16px] text-amber-600 shrink-0 mt-0.5">warning</span>
+<span class="font-body-sm text-body-sm text-secondary text-[11px] leading-tight">
+              Admin invitations grant administrative access only within assigned event boundaries. Superadmin role cannot be delegated.
+            </span>
+</div>
+</div>
+</div>
+<!-- Drawer Footer Action Bar -->
+<div class="p-space-lg bg-surface-container-lowest sticky bottom-0 z-10 shadow-lg flex items-center justify-between">
+<button class="px-4 py-2 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container font-label-md text-label-md transition-colors" id="cancel-invite-btn" type="button">
+          Cancel
+        </button>
+<div class="flex items-center gap-space-sm">
+<button class="px-4 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors" type="button">
+            Save as Draft
+          </button>
+<button class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-2 shadow-md transition-all" id="send-invitation-action" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>Send Invitation</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const backdrop = document.getElementById('invite-drawer-backdrop');
+    const openBtn = document.getElementById('open-invite-btn');
+    const closeBtn = document.getElementById('close-invite-btn');
+    const cancelBtn = document.getElementById('cancel-invite-btn');
+    const copyBtn = document.getElementById('copy-link-btn');
+    const sendBtn = document.getElementById('send-invitation-action');
+
+    function showDrawer() {
+      if (backdrop) backdrop.classList.remove('hidden');
+    }
+
+    function hideDrawer() {
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    if (openBtn) openBtn.addEventListener('click', showDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', hideDrawer);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideDrawer);
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        const originalText = copyBtn.innerHTML;
+        navigator.clipboard?.writeText('https://app.eventphotos.io/join?token=ADMIN-INV-8492-XQ');
+        copyBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span><span>Copied!</span>';
+        setTimeout(() => {
+          copyBtn.innerHTML = originalText;
+        }, 2000);
+      });
+    }
+
+    if (sendBtn) {
+      sendBtn.addEventListener('click', function() {
+        sendBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span><span>Inviting...</span>';
+        setTimeout(() => {
+          sendBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Invite Sent!</span>';
+          setTimeout(() => {
+            hideDrawer();
+            sendBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">send</span><span>Send Invitation</span>';
+          }, 800);
+        }, 1000);
+      });
+    }
+  })();
+</script></main></div></body></html>

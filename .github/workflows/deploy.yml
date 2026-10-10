@@ -1,0 +1,153 @@
+name: Build & Deploy Web and Android APK
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==========================================
+  # 1. BUILD & DEPLOY WEB (GITHUB PAGES)
+  # ==========================================
+  web:
+    name: Build & Deploy Web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Export Web Bundle
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
+          EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
+          EXPO_PUBLIC_R2_BUCKET: ${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'c5b183bb011ad958f341adda9e499c13' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec' }}
+        run: npx expo export --platform web
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Upload Web Build Zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Purusharth-Studio-Web-Bundle
+          path: dist
+          retention-days: 14
+
+  # ==========================================
+  # 2. BUILD STANDALONE ANDROID APK
+  # ==========================================
+  android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Expo Prebuild (Generate Native Android Project)
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
+          EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
+          EXPO_PUBLIC_R2_BUCKET: ${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
+          EXPO_PUBLIC_R2_PUBLIC_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
+        run: npx expo prebuild --platform android --clean
+
+      - name: Cache Gradle Packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*') }}
+          restore-keys: |
+            ${ runner.os }}-gradle-
+
+      - name: Build Android APK via Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p build-output
+          cp android/app/build/outputs/apk/debug/*.apk build-output/Purusharth-Studio.apk
+          echo "APK generated successfully at build-output/Purusharth-Studio.apk"
+          ls -lh build-output/
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Purusharth-Studio-Android-APK
+          path: build-output/Purusharth-Studio.apk
+          retention-days: 30
+
+      - name: Publish APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "Purusharth Studio — Latest Android Release"
+          body: |
+            ### 📸 Purusharth Studio — Automated Production Build
+            
+            - **Android APK**: Download the `Purusharth-Studio.apk` asset below and install it directly on any Android device.
+            - **Web Interface**: Deployed live on GitHub Pages.
+            - **Commit**: `${{ github.sha }}`
+          files: build-output/Purusharth-Studio.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

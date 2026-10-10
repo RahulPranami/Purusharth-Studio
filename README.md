@@ -1,56 +1,80 @@
-# Welcome to your Expo app 👋
+# Purusharth Studio
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **"Your Moments. Your Memories."**  
+> Luxury Event Photography & Cinematography Platform  
+> Unified Web & Mobile Application built with React Native (Expo SDK 57), Supabase, and Cloudflare R2.
 
-## Get started
+---
 
-1. Install dependencies
+## 🌟 Key Features
 
-   ```bash
-   npm install
-   ```
+### 1. Client & Director Portal (Mobile & Web)
+- **Private Event Vault Access:** Unlock exclusive wedding & gala collections using event passcodes (e.g. `UDAIPUR-24`, `OBEROI-GL`).
+- **Biometric Selfie Onboarding:** Camera and photo library reference capture uploaded directly to Cloudflare R2 for automated AI facial matching.
+- **High-Resolution Gallery & Lightbox:** Responsive grid displaying high-res photographs with pinch-to-zoom, metadata, and full-screen preview.
+- **Shared Collections & 4K Cinema Reels:** Master editorial lookbooks featuring ProRes 4444 teaser previews.
+- **Universal Authentication:** One-Time Password (OTP) sign-in via Email or Mobile, plus Super Admin clearance.
 
-2. Start the app
+### 2. Super Admin Operations Console (Web Dashboard)
+- **Operational Telemetry Dashboard:** 4 KPI telemetry cards, live ingestion activity graphs, recent production roster, and storage capacity gauges.
+- **Bulk Media Ingestion:** Multi-file drag-and-drop zone with direct-to-R2 upload pipeline, per-file upload speed, SHA verification, and automatic database registration.
+- **Events Directory:** Filterable catalog with Table and Grid view modes, status pills, and interactive Create Event modal.
+- **Admins & Referral Network:** Team permissions directory with clearance badges and time-expiring Admin Invite Key generator (`INVITE-2025`).
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🛠️ Technology Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [Expo SDK 57](https://expo.dev) + [Expo Router](https://docs.expo.dev/router/introduction/) |
+| **Web Runtime** | [React Native Web 0.21](https://necolas.github.io/react-native-web/) |
+| **Database & Auth** | [Supabase](https://supabase.com) (PostgreSQL 15, RLS, Stored Procedures, OTP Auth) |
+| **Media Storage & CDN** | [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) (APAC region) + Managed Public CDN |
+| **UI Design System** | Stitch Luxury Ivory/Gold Theme (Client) + Linear/Stripe Console (Super Admin) |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 🚀 Quick Start
 
-When you're ready, run:
-
+### 1. Install Dependencies
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Verify Storage & Backend Pipeline
+Run the automated end-to-end verification script testing Cloudflare R2 uploads, public CDN reads, and Supabase media registration:
+```bash
+npm run verify:r2
+```
 
-### Other setup steps
+### 3. Start Development Server
+```bash
+# Launch Admin Dashboard & Client on Web Browser
+npx expo start --web
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+# Launch Universal Dev Server (iOS, Android, Web)
+npx expo start
+```
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🗺️ Application Routes
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `/`: Client Lookbook, Event Vault Access, Active Passes, Curated Collections
+- `/login`: Universal OTP Login (Email / Mobile) & Super Admin clearance
+- `/profile`: Biometric Selfie Onboarding & User Profile Settings
+- `/event/[id]`: Event Photo Gallery & High-Res Lightbox Modal
+- `/admin`: Super Admin Telemetry Dashboard Overview
+- `/admin/events`: Events Directory & Create Event Modal
+- `/admin/uploads`: Photo Uploads & Multi-File Drag-and-Drop Bulk Ingest
+- `/admin/admins`: Admins Roster & Generate Invite Code Modal
+- `/admin/login`: Dedicated Super Admin Console Login
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📚 Complete Documentation
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+For the comprehensive system architecture, database schema diagrams, Row-Level Security policies, Cloudflare R2 API specifications, and operational runbook, please see:
+
+👉 **[docs/SYSTEM_DOCUMENTATION.md](file:///C:/Users/rahul/Projects/Purusharth-Studio/docs/SYSTEM_DOCUMENTATION.md)**

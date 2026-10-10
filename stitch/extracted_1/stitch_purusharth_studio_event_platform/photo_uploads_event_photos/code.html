@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"background":"#f9f9ff","primary-container":"#2563eb","surface-variant":"#dce2f7","on-tertiary-fixed":"#001a42","surface-dim":"#d3daef","surface-container-high":"#e1e8fd","error":"#ba1a1a","secondary-fixed":"#dae2fd","on-tertiary-fixed-variant":"#004395","inverse-on-surface":"#edf0ff","primary":"#004ac6","surface-tint":"#0053db","primary-fixed":"#dbe1ff","surface-container-low":"#f1f3ff","on-secondary-fixed":"#131b2e","secondary-container":"#dae2fd","tertiary":"#0051b1","error-container":"#ffdad6","tertiary-fixed":"#d8e2ff","surface-bright":"#f9f9ff","surface-container-highest":"#dce2f7","tertiary-container":"#0f69dc","on-background":"#141b2b","on-secondary-fixed-variant":"#3f465c","on-primary-container":"#eeefff","on-surface-variant":"#434655","on-primary":"#ffffff","on-error":"#ffffff","on-secondary":"#ffffff","inverse-surface":"#293040","tertiary-fixed-dim":"#adc6ff","on-primary-fixed":"#00174b","primary-fixed-dim":"#b4c5ff","surface":"#f9f9ff","surface-container-lowest":"#ffffff","on-primary-fixed-variant":"#003ea8","on-tertiary-container":"#edf0ff","on-secondary-container":"#5c647a","surface-container":"#e9edff","inverse-primary":"#b4c5ff","on-surface":"#141b2b","outline-variant":"#c3c6d7","secondary-fixed-dim":"#bec6e0","secondary":"#565e74","on-tertiary":"#ffffff","outline":"#737686","on-error-container":"#93000a"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter":"1.5rem","gutter-mobile":"1rem","space-md":"1rem","space-xl":"2rem","space-xs":"0.25rem","space-lg":"1.5rem","margin-mobile":"1rem","space-sm":"0.5rem","margin":"2rem"},fontFamily:{"headline-sm":["Inter"],"headline-lg":["Inter"],"code-sm":["JetBrains Mono"],"label-sm":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"body-lg":["Inter"],"body-sm":["Inter"],"label-xs":["Inter"],"headline-xl":["Inter"]},fontSize:{"headline-sm":["18px",{"lineHeight":"24px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.02em","fontWeight":"600"}],"code-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"label-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"500"}],"label-md":["14px",{"lineHeight":"20px","letterSpacing":"-0.006em","fontWeight":"500"}],"body-md":["14px",{"lineHeight":"20px","letterSpacing":"-0.006em","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"16px","letterSpacing":"0em","fontWeight":"400"}],"label-xs":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.025em","fontWeight":"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-60 bg-surface-container-lowest z-50 flex flex-col justify-between border-r border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center gap-space-sm border-b border-outline-variant/20"><div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm"><span class="material-symbols-outlined text-[20px]">center_focus_strong</span></div><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none truncate">Event Photos</span><span class="font-label-xs text-label-xs uppercase tracking-wider text-secondary mt-0.5 truncate">Superadmin Console</span></div></div><div class="px-space-sm pt-space-md pb-space-xs"><span class="px-space-sm font-label-xs text-label-xs uppercase tracking-wider text-outline">Platform Operations</span></div><nav class="flex flex-col gap-0.5 px-space-sm" data-active-classes="bg-surface-container text-primary font-label-md rounded-lg"><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">space_dashboard</span><span>Dashboard</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="events" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">calendar_month</span><span>Events</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high font-label-xs text-label-xs text-on-surface-variant">12</span></a><a aria-current="page" class="flex items-center justify-between px-space-sm py-2 transition-colors bg-surface-container text-primary font-label-md rounded-lg" data-path="photo-uploads" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">cloud_upload</span><span>Photo Uploads</span></div><span class="px-1.5 py-0.5 rounded-full bg-secondary-container font-label-xs text-label-xs text-on-secondary-fixed">Active</span></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="admins" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">admin_panel_settings</span><span>Admins</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="attendees" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">group</span><span>Attendees</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="storage-and-usage" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">database</span><span>Storage &amp; Usage</span></div></a><a class="flex items-center justify-between px-space-sm py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="settings" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px] text-secondary">settings</span><span>Settings</span></div></a></nav></div><div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest"><div class="flex items-center justify-between p-space-sm rounded-lg hover:bg-surface-container-low transition-colors"><div class="flex items-center gap-space-sm min-w-0"><div class="relative w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span><span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-surface-container-lowest"></span></div><div class="flex flex-col min-w-0"><span class="font-label-sm text-label-sm text-on-surface font-semibold truncate leading-none">Alex Vance</span><span class="font-code-sm text-code-sm text-secondary truncate mt-0.5 leading-none">superadmin@eventphotos.io</span></div></div><div class="flex items-center gap-0.5 shrink-0"><button class="p-1 text-secondary hover:text-on-surface rounded transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">unfold_more</span></button><button class="p-1 text-secondary hover:text-error rounded transition-colors" title="Sign out" type="button"><span class="material-symbols-outlined text-[18px]">logout</span></button></div></div></div></aside><div class="pl-60 min-h-screen flex flex-col"><header class="fixed top-0 left-60 right-0 h-16 bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/30 z-40 px-space-lg flex items-center justify-between gap-space-md shadow-[0_1px_6px_rgba(0,0,0,0.02)]"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-1.5 font-label-md text-label-md text-secondary"><span class="hover:text-on-surface transition-colors cursor-pointer">Console</span><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-on-surface font-medium capitalize">Superadmin Overview</span></div></div><div class="flex items-center gap-space-md"><div class="relative w-72"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span><input class="w-full h-9 pl-9 pr-12 rounded-lg bg-surface border border-outline-variant/40 font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search events, admins, photos..." type="text"/><span class="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-outline-variant/50 font-code-sm text-code-sm text-secondary bg-surface-container-lowest">⌘K</span></div><div class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="font-label-xs text-label-xs text-emerald-700">Worker Cluster: 99.8% Healthy</span></div><button class="relative p-2 text-secondary hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-xs text-[10px]">3</span></button><div class="h-5 w-px bg-outline-variant/40"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-background flex-1 px-space-lg py-space-lg"><div class="flex flex-col w-full">
+<!-- Top Action & Context Banner -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-lg mb-space-xl">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-xs text-label-xs uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          Direct S3 Ingest Pipeline
+        </span>
+<span class="font-code-sm text-code-sm text-secondary">Session ID: #ING-2025-089A</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Bulk Photo Upload</h1>
+<p class="font-body-md text-body-md text-secondary mt-1">Upload high-resolution event photos securely and let AI organize attendee galleries in the background.</p>
+</div>
+<!-- Target Event Switcher Card -->
+<div class="relative bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between gap-space-md min-w-[340px] max-w-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[24px]">corporate_fare</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-xs text-label-xs uppercase tracking-wide text-secondary font-semibold">Target Event</span>
+<span class="inline-flex items-center px-1.5 py-0.2 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs">Active</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface truncate font-semibold">Annual Tech Summit 2025</span>
+<span class="font-code-sm text-code-sm text-secondary">May 24–26, 2025 • Moscone West</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-container font-label-sm text-label-sm text-primary transition-all shrink-0" type="button">
+        Switch Event
+      </button>
+</div>
+</div>
+<!-- Telemetry & Ingestion Summary Bar -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-xl">
+<!-- Metric 1 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary">Photos In Queue</span>
+<span class="material-symbols-outlined text-[20px] text-primary">collections</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">4,250</span>
+<span class="font-code-sm text-code-sm text-secondary">files</span>
+</div>
+<div class="mt-1 flex items-center justify-between font-label-xs text-label-xs text-secondary">
+<span>Payload size: 18.4 GB</span>
+<span class="text-primary font-medium">85% Indexed</span>
+</div>
+</div>
+<!-- Mini Sparkline visualization -->
+<div class="mt-space-sm h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary">Uploading Speed</span>
+<span class="material-symbols-outlined text-[20px] text-tertiary">speed</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">42.8</span>
+<span class="font-label-md text-label-md text-secondary">MB/s</span>
+</div>
+<div class="mt-1 flex items-center justify-between font-label-xs text-label-xs text-secondary">
+<span>12 parallel threads</span>
+<span class="text-tertiary font-medium">S3 Multipart</span>
+</div>
+</div>
+<div class="mt-space-sm h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary">Faces Detected</span>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">face</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-semibold tracking-tight">1,842</span>
+<span class="font-code-sm text-code-sm text-secondary">landmarks</span>
+</div>
+<div class="mt-1 flex items-center justify-between font-label-xs text-label-xs text-secondary">
+<span>Confidence &gt; 99.4%</span>
+<span class="font-medium text-on-surface">Embeddings OK</span>
+</div>
+</div>
+<div class="mt-space-sm h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 64%"></div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary">Processing Status</span>
+<span class="material-symbols-outlined text-[20px] text-primary">memory</span>
+</div>
+<div class="mt-space-md">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">Node #04</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs">Active</span>
+</div>
+<div class="mt-1 flex items-center justify-between font-label-xs text-label-xs text-secondary">
+<span>Python Vector Engine</span>
+<span class="font-code-sm text-code-sm">CPU 34%</span>
+</div>
+</div>
+<div class="mt-space-sm h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500 rounded-full" style="width: 34%"></div>
+</div>
+</div>
+</div>
+<!-- Upload Drop Zone Area -->
+<div class="relative group bg-surface-container-low rounded-2xl p-space-xl text-center mb-space-xl transition-all duration-200" id="drop-zone">
+<!-- SVG Cloud graphic + glow -->
+<div class="mx-auto w-16 h-16 rounded-2xl bg-primary-container text-on-primary flex items-center justify-center shadow-lg mb-space-md group-hover:scale-105 transition-transform duration-200">
+<span class="material-symbols-outlined text-[34px]">cloud_upload</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight mb-2">
+      Drag and drop photo batches or folders here
+    </h2>
+<p class="font-body-md text-body-md text-secondary max-w-lg mx-auto mb-space-lg">
+      Drop your multi-gigabyte event memory cards directly. High-resolution originals stream straight to private object storage.
+    </p>
+<!-- File Picker Actions -->
+<div class="flex flex-wrap items-center justify-center gap-space-sm mb-space-lg">
+<label class="px-5 py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold cursor-pointer shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">photo_library</span>
+<span>Select Photo Files</span>
+<input accept="image/jpeg,image/png,image/heic,image/x-canon-cr2,image/x-nikon-nef" class="hidden" multiple="" type="file"/>
+</label>
+<label class="px-5 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md font-semibold cursor-pointer shadow-sm hover:bg-surface-container active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">folder_zip</span>
+<span>Select Folder / ZIP Archive</span>
+<input class="hidden" directory="" multiple="" type="file" webkitdirectory=""/>
+</label>
+</div>
+<!-- Supported formats & Direct-Stream Trust Pill -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-space-md max-w-2xl mx-auto pt-space-sm">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container font-label-xs text-label-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">info</span>
+<span>JPG, JPEG, PNG, HEIC up to 50MB each. Max batch: 5,000 files per session.</span>
+</div>
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container font-label-xs text-label-xs text-secondary">
+<span class="material-symbols-outlined text-[14px] text-primary">verified_user</span>
+<span>Encrypted stream to private S3. Zero compression applied.</span>
+</div>
+</div>
+</div>
+<!-- Upload Queue & Realtime Processing Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden mb-space-lg">
+<!-- Queue Control Header -->
+<div class="p-space-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm">
+<div class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Active Upload Queue</span>
+<span class="font-code-sm text-code-sm text-secondary">Batch #4: 6 Files Shown (4,250 Total in Session)</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">pause</span>
+<span>Pause All</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+<span>Resume All</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-error font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">replay</span>
+<span>Retry 1 Failed</span>
+</button>
+<div class="h-4 w-px bg-surface-container mx-1"></div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-secondary hover:text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+          Clear Completed
+        </button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low font-label-xs text-label-xs uppercase tracking-wider text-secondary">
+<th class="py-3 px-space-md w-16">Preview</th>
+<th class="py-3 px-space-md">File Name</th>
+<th class="py-3 px-space-md">Resolution &amp; Size</th>
+<th class="py-3 px-space-md min-w-[220px]">Upload Progress</th>
+<th class="py-3 px-space-md min-w-[200px]">AI Pipeline Status</th>
+<th class="py-3 px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<!-- Row 1: Completed State -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-sm relative group">
+<img class="w-full h-full object-cover" data-alt="A brightly lit conference keynote stage with a tech executive presenting against a deep blue digital LED backdrop and warm studio spotlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxbJUFkDTJabiCzjZMNHFKoQYf6efn1kFQhqjfr2ERSPkWPJ4yrLFgBN3cKmKeRN_lneKv-pzCynVfdndk0pewopY9dsPkNQQvpCylPM3roSQb9DnCRhJUf3o-HV66VXC4Oce5-CdDkm2Z5UznDPzIBT0z2-6ByEYvdAe1QcD2N1DPGmaBZPLEkQj5sXgn5WNN3sfj_H5CsnWj8gdUK981lctNsWe0LJhYv9jsp45f6UZ64SSRXXzSOQ"/>
+<span class="material-symbols-outlined absolute bottom-0.5 right-0.5 text-on-primary bg-emerald-600 rounded-full text-[14px]">check</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4920_Stage_Keynote.jpg</span>
+<span class="font-code-sm text-code-sm text-secondary">SHA: 8f02a...c39</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">24.2 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">14.2 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs">
+<span class="text-emerald-700 font-medium">100% Uploaded</span>
+<span class="font-code-sm text-code-sm text-secondary">14.2 / 14.2 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-emerald-600 rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Completed (12 Faces)
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2.5 py-1 rounded-md text-primary hover:bg-surface-container font-label-sm text-label-sm font-medium transition-colors" type="button">
+                View Details
+              </button>
+</td>
+</tr>
+<!-- Row 2: Indexing Faces (Amber badge) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-sm relative group">
+<img class="w-full h-full object-cover" data-alt="An energetic auditorium crowd clapping enthusiastically in soft theater lighting, showing distinct smiling faces and attendees holding badges." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnxC0LFWSOOdJqLr8aznnhJV6lt9TKkQZSyl3tNgKbdPVWA8LntK3uILJaD0iEoRdx1C2Gosdr5Z44AT-r9u_ZZq03ez_VwFp5NeiecQRh17rXfAvGIy7XYIx2lak-YN3RTHCKOA2IC_2rEuGE9I3-nGBRHdDERPOFneypSVuNO6qBEpswlA6TwnJUFLsEggFx6gcwAS9cI2jxjWIBlAoMyEGLQvp0ggqs5tRuxKbr__2yzWhC0BmsFw"/>
+<span class="material-symbols-outlined absolute bottom-0.5 right-0.5 text-on-primary bg-amber-500 rounded-full text-[14px] animate-spin">sync</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4921_Crowd_Reaction.jpg</span>
+<span class="font-code-sm text-code-sm text-secondary">SHA: 1e99d...21b</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">24.2 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">16.8 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs">
+<span class="text-on-surface-variant font-medium">100% Uploaded</span>
+<span class="font-code-sm text-code-sm text-secondary">16.8 / 16.8 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping"></span>
+                Indexing Faces (Vectors)
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2.5 py-1 rounded-md text-secondary hover:text-on-surface hover:bg-surface-container font-label-sm text-label-sm font-medium transition-colors" type="button">
+                Inspect
+              </button>
+</td>
+</tr>
+<!-- Row 3: Uploading State (68%) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-sm relative group">
+<img class="w-full h-full object-cover" data-alt="A focused female speaker holding a microphone on stage at an evening tech summit, with dramatic side lighting and a high-tech stage set." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7_sGfZGAGxd9-cKc9Es5R_vB9j4bzniScwmCi47anKVLhqqUwROS_ARSe-HXOnMDQxp6EPLQ5hFi5SdMisSErsrqhe9PmOY28QpJ49i4NnYlMuLYA0JlciGldnxN8izK1QA13pmSu2KSj1h7DMn_7crKGIP0S_6SnWPc8b7AUnavC4cBoAQtXhKb9DNCGkTfzUrcNLtiOVJbRH__3U02JciG4lm2apHpNEG0xOMqRgIwRT-bpSjFi7A"/>
+<div class="absolute inset-0 bg-primary/20 backdrop-blur-[1px] flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[16px] animate-bounce">arrow_upward</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4922_Speaker_QnA.jpg</span>
+<span class="font-code-sm text-code-sm text-secondary">SHA: 77a10...33c</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">24.2 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">15.1 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs">
+<span class="text-primary font-medium">68% Uploading (4.2 MB/s)</span>
+<span class="font-code-sm text-code-sm text-secondary">10.2 / 15.1 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-300" style="width: 68%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                Uploading Stream
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2.5 py-1 rounded-md text-secondary hover:text-error hover:bg-error-container/30 font-label-sm text-label-sm font-medium transition-colors" type="button">
+                Cancel
+              </button>
+</td>
+</tr>
+<!-- Row 4: Face Detection Complete (18 Faces Detected) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-sm relative group">
+<img class="w-full h-full object-cover" data-alt="Wide expansive panoramic angle of an entire packed convention hall, with dozens of attendees visible in crisp focus across multiple seating rows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwNXKD2LQ7BV6k8kPB52xuGQNWB0UPJEKtAPDNsOHqc--2XUt7FPukGAvXdUlsIQLIv5KLbVfU0xyaNn0qWRzZ7d-9NxMvVz9JsR5N9UZMjZ5zI6e7jdlb5pM9MXaubDT6Z_KIRPEnPCM_KN30iu2jXdFIJX___J37NayYBicLtDr-gsjoLj0k6667Oc_YZdXKxGksfzb8VV9omoxU_U-9AAB6ePgE3emaPS-8Jn8Fk1zhUKpZKbsDgg"/>
+<span class="material-symbols-outlined absolute bottom-0.5 right-0.5 text-on-primary bg-primary rounded-full text-[14px]">face</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4923_Auditorium_Wide.jpg</span>
+<span class="font-code-sm text-code-sm text-secondary">SHA: 90cf1...6fa</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">45.4 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">28.4 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs">
+<span class="text-emerald-700 font-medium">100% Uploaded</span>
+<span class="font-code-sm text-code-sm text-secondary">28.4 / 28.4 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-emerald-600 rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-fixed font-label-xs text-label-xs">
+<span class="material-symbols-outlined text-[13px]">groups</span>
+                18 Faces Detected
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2.5 py-1 rounded-md text-secondary hover:text-on-surface hover:bg-surface-container font-label-sm text-label-sm font-medium transition-colors" type="button">
+                Inspect
+              </button>
+</td>
+</tr>
+<!-- Row 5: Queued State (0%) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4924_VIP_Lounge.jpg</span>
+<span class="font-code-sm text-code-sm text-secondary">SHA: Pending...</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">24.2 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">13.9 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs text-secondary">
+<span>Queued in pipeline</span>
+<span class="font-code-sm text-code-sm">0.0 / 13.9 MB</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-outline-variant rounded-full" style="width: 0%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container font-label-xs text-label-xs text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                Waiting in Queue
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-2.5 py-1 rounded-md text-secondary hover:text-error hover:bg-surface-container font-label-sm text-label-sm font-medium transition-colors" type="button">
+                Remove
+              </button>
+</td>
+</tr>
+<!-- Row 6: Failed State (Network Timeout) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3 px-space-md">
+<div class="w-12 h-12 rounded-lg bg-error-container/40 overflow-hidden shrink-0 shadow-sm flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[20px]">broken_image</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">DSC_4925_Registration_Desk.heic</span>
+<span class="font-code-sm text-code-sm text-error">Err: Connection closed by peer</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface">18.0 MP</span>
+<span class="font-code-sm text-code-sm text-secondary">9.4 MB</span>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between font-label-xs text-label-xs">
+<span class="text-error font-medium">Failed at 88% (Timeout)</span>
+<span class="font-code-sm text-code-sm text-secondary">8.2 / 9.4 MB</span>
+</div>
+<div class="h-2 w-full bg-error-container rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 88%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-xs text-label-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                Upload Failed
+              </span>
+</td>
+<td class="py-3 px-space-md text-right">
+<button class="px-3 py-1 rounded-lg bg-error text-on-error font-label-sm text-label-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-sm" type="button">
+                Retry
+              </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Bulk Status Footer -->
+<div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm font-body-sm text-body-sm text-secondary">
+<div class="flex items-center gap-2">
+<span>Showing 6 of 4,250 items</span>
+<span>•</span>
+<span class="font-code-sm text-code-sm">1 fail, 1 uploading, 1 indexing, 1 queued, 2 completed</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-secondary disabled:opacity-40" disabled="" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<span class="px-2 font-code-sm text-code-sm text-on-surface font-medium">Page 1 of 709</span>
+<button class="p-1 rounded hover:bg-surface-container text-secondary" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Notification & Operational Guardrail Card -->
+<div class="p-space-lg rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+</div>
+<div class="flex flex-col gap-1 min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Superadmin Ingestion Guardrail</span>
+<span class="px-2 py-0.2 rounded bg-surface-container font-code-sm text-code-sm text-secondary">v2.1 Isolation</span>
+</div>
+<p class="font-body-md text-body-md text-secondary leading-relaxed">
+        Photos are uploaded directly to private object storage. AI face indexing runs asynchronously via background workers and does not block superadmin operations. Attendees will only be alerted once the event status is set to <span class="font-semibold text-on-surface">Published</span>.
+      </p>
+<div class="mt-2 flex items-center gap-space-md">
+<a class="font-label-sm text-label-sm text-primary hover:underline font-medium inline-flex items-center gap-1" href="#">
+          Review worker cluster telemetry <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+<span class="text-outline-variant">•</span>
+<a class="font-label-sm text-label-sm text-secondary hover:text-on-surface font-medium inline-flex items-center gap-1" href="#">
+          View S3 bucket retention policy
+        </a>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Micro-interaction for drag-and-drop zone
+  const dropZone = document.getElementById('drop-zone');
+  if (dropZone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.add('bg-surface-container-high');
+      }, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('bg-surface-container-high');
+      }, false);
+    });
+  }
+</script></main></div></body></html>
