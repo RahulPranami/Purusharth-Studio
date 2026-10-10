@@ -12,11 +12,13 @@ import {
   useWindowDimensions,
   Linking,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/utils/supabase';
 import { useAuth } from '@/context/auth-context';
+import { matchSelfieWithEvent } from '@/services/analyzer';
 
 interface EventDetail {
   id: string;
@@ -55,7 +57,10 @@ export default function EventDetailScreen() {
   const [notFound, setNotFound] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoMedia | null>(null);
   const [photoDimensions, setPhotoDimensions] = useState<string>('');
-  const [filterTab, setFilterTab] = useState<'all' | 'curated' | 'raw'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'curated' | 'raw' | 'my_photos'>('all');
+  const [matchingPhotos, setMatchingPhotos] = useState<boolean>(false);
+  const [matchedPhotoKeys, setMatchedPhotoKeys] = useState<Map<string, number>>(new Map());
+  const [matchStatusText, setMatchStatusText] = useState<string>('');
 
   // Compute number of grid columns based on screen width
   const numColumns = width >= 1024 ? 4 : width >= 768 ? 3 : 2;
@@ -122,7 +127,53 @@ export default function EventDetailScreen() {
     }
   };
 
+  const handleSelectMyPhotos = async () => {
+    setFilterTab('my_photos');
+    if (!profile?.selfie_key) {
+      Alert.alert(
+        'Biometric Selfie Needed',
+        'To find photos featuring you with AI, please take a quick selfie in your profile first.',
+        [
+          { text: 'Later', style: 'cancel', onPress: () => setFilterTab('all') },
+          { text: 'Go to Profile', onPress: () => router.push('/profile') },
+        ]
+      );
+      return;
+    }
+
+    if (matchedPhotoKeys.size > 0) return;
+
+    setMatchingPhotos(true);
+    setMatchStatusText('Scanning faces in event album with AI...');
+    try {
+      const res = await matchSelfieWithEvent({
+        selfieKey: profile.selfie_key,
+        collectionScope: (id as string) || event?.id || 'default',
+        threshold: 0.40,
+      });
+
+      const map = new Map<string, number>();
+      res.top_matches.forEach((m) => {
+        map.set(m.image_key, Math.round(m.best_similarity * 100));
+      });
+      setMatchedPhotoKeys(map);
+      setMatchStatusText(
+        map.size > 0
+          ? `✨ AI found ${map.size} photo(s) featuring you!`
+          : 'No photos matched your selfie in this event yet.'
+      );
+    } catch (err: any) {
+      console.warn('AI matching error:', err);
+      setMatchStatusText(err.message || 'AI matching temporarily unavailable.');
+    } finally {
+      setMatchingPhotos(false);
+    }
+  };
+
   const filteredPhotos = photos.filter((p) => {
+    if (filterTab === 'my_photos') {
+      return matchedPhotoKeys.has(p.object_key);
+    }
     if (filterTab === 'curated') {
       return photos.indexOf(p) < 4 || p.title?.toLowerCase().includes('arrival') || p.title?.toLowerCase().includes('ballroom');
     }
@@ -243,7 +294,39 @@ export default function EventDetailScreen() {
                   High-Res Archive
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterTab,
+                  filterTab === 'my_photos' && styles.filterTabActive,
+                  { borderColor: '#C5A059' },
+                ]}
+                onPress={handleSelectMyPhotos}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    filterTab === 'my_photos' && styles.filterTabTextActive,
+                    { color: filterTab === 'my_photos' ? '#FFFFFF' : '#C5A059' },
+                  ]}
+                >
+                  ✨ My Photos (AI)
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {/* AI Matching Status Banner */}
+            {matchingPhotos && (
+              <View style={styles.matchingBanner}>
+                <ActivityIndicator size="small" color="#C5A059" />
+                <Text style={styles.matchingText}>{matchStatusText}</Text>
+              </View>
+            )}
+            {!matchingPhotos && filterTab === 'my_photos' && matchStatusText !== '' && (
+              <View style={styles.matchingBanner}>
+                <Text style={styles.matchingText}>{matchStatusText}</Text>
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -254,6 +337,13 @@ export default function EventDetailScreen() {
           >
             <View style={styles.photoFrame}>
               <Image source={{ uri: item.url }} style={styles.thumbnail} resizeMode="cover" />
+              {matchedPhotoKeys.has(item.object_key) && (
+                <View style={styles.matchBadge}>
+                  <Text style={styles.matchBadgeText}>
+                    ✨ {matchedPhotoKeys.get(item.object_key)}% Match
+                  </Text>
+                </View>
+              )}
               <View style={styles.photoOverlay}>
                 <Text style={styles.photoTitle} numberOfLines={1}>
                   {item.title}
@@ -614,5 +704,39 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
+  },
+  matchingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAF5EA',
+    borderWidth: 1,
+    borderColor: '#E6D7B8',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 8,
+  },
+  matchingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8A6827',
+  },
+  matchBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(27, 28, 25, 0.88)',
+    borderColor: '#C5A059',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  matchBadgeText: {
+    color: '#FAF5EA',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

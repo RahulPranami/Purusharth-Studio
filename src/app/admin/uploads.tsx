@@ -13,6 +13,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminIcon } from '@/components/admin/AdminIcon';
 import { AdminColors, AdminTypography } from '@/constants/admin-theme';
 import { uploadToR2, recordMediaInDatabase } from '@/services/r2';
+import { indexPhotoInAnalyzer } from '@/services/analyzer';
 import { supabase } from '@/utils/supabase';
 
 interface QueueItem {
@@ -157,7 +158,19 @@ export default function AdminPhotoUploadsScreen() {
           console.warn('Error recording media in Supabase:', dbErr);
         }
 
-        // Set completed in queue
+        // Real-time Facial Indexing via Analyzer API
+        let detectedFaces = 0;
+        try {
+          const indexRes = await indexPhotoInAnalyzer(
+            uploadRes.key,
+            eventFolder.startsWith('default') || eventFolder === 'general' ? 'default' : eventFolder
+          );
+          detectedFaces = indexRes.faces_detected;
+        } catch (idxErr) {
+          console.warn('Facial indexing non-fatal error:', idxErr);
+        }
+
+        // Set completed in queue with REAL detected face count
         setQueue((prev) =>
           prev.map((item) =>
             item.id === targetId
@@ -165,7 +178,7 @@ export default function AdminPhotoUploadsScreen() {
                   ...item,
                   progress: 100,
                   status: 'completed',
-                  facesCount: Math.floor(Math.random() * 15) + 3,
+                  facesCount: detectedFaces,
                   r2Key: uploadRes.key,
                   r2Url: uploadRes.url,
                 }

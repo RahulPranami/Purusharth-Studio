@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/auth-context';
 import { uploadToR2 } from '@/services/r2';
+import { analyzeSelfie } from '@/services/analyzer';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -90,9 +91,38 @@ export default function ProfileScreen() {
       setFeedback(null);
 
       const userId = user?.id || 'anonymous';
+
+      // 1. Validate selfie with AI Analyzer
+      try {
+        const analysis = await analyzeSelfie({
+          uri: asset.uri,
+          name: `selfie_${userId}.jpg`,
+          type: 'image/jpeg',
+          size: asset.fileSize,
+        });
+
+        if (analysis.faces_detected_count === 0) {
+          setUploadingSelfie(false);
+          setFeedback({
+            type: 'error',
+            message: 'No face detected in this photo. Please retake facing the camera with good lighting.',
+          });
+          return;
+        }
+
+        if (analysis.faces_detected_count > 1) {
+          Alert.alert(
+            'Multiple Faces Detected',
+            'We noticed multiple faces in this photo. For the best facial matching results in event albums, a solo selfie is strongly recommended.'
+          );
+        }
+      } catch (analysisErr: any) {
+        console.warn('AI Selfie pre-validation warning:', analysisErr);
+      }
+
       const key = `selfies/${userId}_${Date.now()}.jpg`;
 
-      // Upload directly to Cloudflare R2
+      // 2. Upload directly to Cloudflare R2
       const uploadRes = await uploadToR2(
         {
           uri: asset.uri,
@@ -105,7 +135,7 @@ export default function ProfileScreen() {
 
       setSelfieUrl(uploadRes.url);
 
-      // Save to Supabase
+      // 3. Save to Supabase
       if (user?.id) {
         await updateProfile({
           selfie_key: uploadRes.key,
@@ -116,7 +146,7 @@ export default function ProfileScreen() {
       setUploadingSelfie(false);
       setFeedback({
         type: 'success',
-        message: 'Biometric selfie indexed and uploaded to private studio storage!',
+        message: 'Biometric selfie verified & indexed! You can now use AI matching in event galleries.',
       });
     } catch (err: any) {
       setUploadingSelfie(false);
