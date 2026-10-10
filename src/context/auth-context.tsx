@@ -27,6 +27,8 @@ interface AuthContextType {
   signInWithOtp: (contact: string, isRegister?: boolean, fullName?: string, inviteCode?: string) => Promise<{ success: boolean; message?: string; isEmail?: boolean }>;
   verifyOtp: (contact: string, token: string) => Promise<{ success: boolean; message?: string }>;
   signInWithPassword: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  resetPasswordForEmail: (email: string) => Promise<{ success: boolean; message?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; message?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
@@ -208,6 +210,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPasswordForEmail = async (email: string) => {
+    try {
+      const redirectUrl =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/admin/reset-password`
+          : undefined;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        redirectUrl ? { redirectTo: redirectUrl } : undefined
+      );
+
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Password reset link sent to your email.' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to send reset link.' };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Password updated successfully.' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to update password.' };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -245,6 +279,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithOtp,
         verifyOtp,
         signInWithPassword,
+        resetPasswordForEmail,
+        updatePassword,
         signOut,
         refreshProfile,
         updateProfile,

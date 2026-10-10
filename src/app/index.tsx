@@ -189,20 +189,18 @@ export default function ClientHomeScreen() {
     }
   };
 
-  // Web requirement: Always ask for login on Web if not authenticated!
+  // Web requirement: Web is strictly Super Admin console!
   if (Platform.OS === 'web') {
-    if (loading) {
+    if (loading || isAuthenticated) {
       return (
         <View style={styles.webLoadingContainer}>
           <ActivityIndicator size="large" color="#755A2A" />
-          <Text style={styles.webLoadingText}>PURUSHARTH STUDIO • SECURE VAULT</Text>
+          <Text style={styles.webLoadingText}>PURUSHARTH STUDIO • ADMIN CONSOLE</Text>
         </View>
       );
     }
 
-    if (!isAuthenticated) {
-      return <WebAuthPortal />;
-    }
+    return <WebAuthPortal />;
   }
 
   return (
@@ -234,14 +232,6 @@ export default function ClientHomeScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-              {Platform.OS === 'web' && (
-                <TouchableOpacity
-                  style={styles.webSignOutBtn}
-                  onPress={() => signOut()}
-                  activeOpacity={0.7}>
-                  <Text style={styles.webSignOutText}>Sign Out</Text>
-                </TouchableOpacity>
-              )}
             </View>
           ) : (
             <TouchableOpacity

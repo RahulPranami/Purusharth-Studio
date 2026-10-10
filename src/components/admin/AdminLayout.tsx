@@ -10,6 +10,7 @@ import {
   Platform,
   Modal,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +41,39 @@ export function AdminLayout({
     : Math.max(insets.top, 12);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { profile, signOut, isAuthenticated, loading } = useAuth();
+  const { profile, signOut, updatePassword, isAuthenticated, loading } = useAuth();
+
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordFeedback({ type: 'error', message: 'Password must be at least 6 characters long.' });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordFeedback({ type: 'error', message: 'Passwords do not match.' });
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordFeedback(null);
+    const res = await updatePassword(newPassword);
+    setPasswordLoading(false);
+    if (res.success) {
+      setPasswordFeedback({ type: 'success', message: 'Password updated successfully!' });
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setTimeout(() => {
+        setPasswordModalOpen(false);
+        setPasswordFeedback(null);
+      }, 1500);
+    } else {
+      setPasswordFeedback({ type: 'error', message: res.message || 'Failed to update password.' });
+    }
+  };
 
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -129,7 +162,12 @@ export function AdminLayout({
               ]}
               onPress={() => {
                 setMobileMenuOpen(false);
-                router.push(item.path as any);
+                if (item.name === 'Settings') {
+                  setPasswordFeedback(null);
+                  setPasswordModalOpen(true);
+                } else {
+                  router.push(item.path as any);
+                }
               }}
               activeOpacity={0.7}
             >
@@ -189,20 +227,27 @@ export function AdminLayout({
 
       {/* User Footer Profile */}
       <View style={styles.userFooter}>
-        <View style={styles.userProfileInfo}>
+        <TouchableOpacity
+          style={styles.userProfileInfo}
+          onPress={() => {
+            setPasswordFeedback(null);
+            setPasswordModalOpen(true);
+          }}
+          activeOpacity={0.7}
+        >
           <View style={styles.avatarCircle}>
             <AdminIcon name="person" size={18} color="#ffffff" />
             <View style={styles.avatarOnlineDot} />
           </View>
           <View style={styles.userTextInfo}>
             <Text style={styles.userName} numberOfLines={1}>
-              {profile?.display_name || 'Aaditya Purusharth'}
+              {profile?.display_name || 'Rahul Pranami'}
             </Text>
             <Text style={styles.userEmail} numberOfLines={1}>
-              {profile?.email || 'superadmin@purusharth.studio'}
+              {profile?.email || 'rahulpranami101@gmail.com'}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleSignOut}
@@ -336,8 +381,12 @@ export function AdminLayout({
 
             {/* User Profile Mini Avatar */}
             <TouchableOpacity
-              onPress={() => router.push('/admin/admins' as any)}
+              onPress={() => {
+                setPasswordFeedback(null);
+                setPasswordModalOpen(true);
+              }}
               style={styles.headerAvatar}
+              activeOpacity={0.7}
             >
               <AdminIcon name="person" size={17} color="#ffffff" />
             </TouchableOpacity>
@@ -353,6 +402,123 @@ export function AdminLayout({
           {children}
         </ScrollView>
       </View>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={passwordModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setPasswordModalOpen(false);
+          setPasswordFeedback(null);
+        }}
+      >
+        <View style={styles.passwordModalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => {
+              setPasswordModalOpen(false);
+              setPasswordFeedback(null);
+            }}
+          />
+          <View style={styles.passwordModalCard}>
+            <View style={styles.passwordModalHeader}>
+              <View>
+                <Text style={styles.passwordModalTitle}>Change Studio Password</Text>
+                <Text style={styles.passwordModalSubtitle}>
+                  Logged in as {profile?.email || 'rahulpranami101@gmail.com'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setPasswordModalOpen(false);
+                  setPasswordFeedback(null);
+                }}
+                style={styles.passwordModalClose}
+              >
+                <AdminIcon name="close" size={20} color={AdminColors.secondary} />
+              </TouchableOpacity>
+            </View>
+
+            {passwordFeedback && (
+              <View
+                style={[
+                  styles.passwordFeedbackBox,
+                  passwordFeedback.type === 'error'
+                    ? styles.passwordFeedbackError
+                    : styles.passwordFeedbackSuccess,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.passwordFeedbackText,
+                    passwordFeedback.type === 'error'
+                      ? styles.passwordFeedbackTextError
+                      : styles.passwordFeedbackTextSuccess,
+                  ]}
+                >
+                  {passwordFeedback.message}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.passwordFormGroup}>
+              <Text style={styles.passwordLabel}>New Password</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Minimum 6 characters"
+                placeholderTextColor={AdminColors.outline}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.passwordFormGroup}>
+              <Text style={styles.passwordLabel}>Confirm New Password</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+                placeholder="Re-enter new password"
+                placeholderTextColor={AdminColors.outline}
+                secureTextEntry
+                autoCapitalize="none"
+                onSubmitEditing={handleChangePassword}
+              />
+            </View>
+
+            <View style={styles.passwordActions}>
+              <TouchableOpacity
+                style={styles.passwordCancelBtn}
+                onPress={() => {
+                  setPasswordModalOpen(false);
+                  setPasswordFeedback(null);
+                }}
+              >
+                <Text style={styles.passwordCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.passwordSaveBtn,
+                  passwordLoading && { opacity: 0.7 },
+                ]}
+                onPress={handleChangePassword}
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.passwordSaveText}>Update Password</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -741,5 +907,124 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 24,
     paddingBottom: 48,
+  },
+  // Password Modal
+  passwordModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  passwordModalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 26,
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+        }
+      : {
+          elevation: 8,
+        }),
+  },
+  passwordModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  passwordModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: AdminColors.onSurface,
+    marginBottom: 4,
+  },
+  passwordModalSubtitle: {
+    fontSize: 12,
+    color: AdminColors.secondary,
+  },
+  passwordModalClose: {
+    padding: 4,
+  },
+  passwordFormGroup: {
+    marginBottom: 16,
+  },
+  passwordLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: AdminColors.onSurface,
+    marginBottom: 6,
+  },
+  passwordInput: {
+    width: '100%',
+    height: 42,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: AdminColors.onSurface,
+    backgroundColor: '#f9fafb',
+    outlineStyle: 'none' as any,
+  },
+  passwordActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 8,
+  },
+  passwordCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  passwordCancelText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.secondary,
+  },
+  passwordSaveBtn: {
+    backgroundColor: AdminColors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  passwordSaveText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  passwordFeedbackBox: {
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  passwordFeedbackError: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+  },
+  passwordFeedbackSuccess: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
+  },
+  passwordFeedbackText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  passwordFeedbackTextError: {
+    color: '#991b1b',
+  },
+  passwordFeedbackTextSuccess: {
+    color: '#166534',
   },
 });

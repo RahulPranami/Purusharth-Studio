@@ -11,265 +11,218 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/auth-context';
+import { AdminIcon } from '@/components/admin/AdminIcon';
 
 export function WebAuthPortal() {
   const router = useRouter();
-  const { signInWithOtp, verifyOtp, signInWithPassword } = useAuth();
+  const { signInWithPassword, resetPasswordForEmail } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'director' | 'client'>('director');
-
-  // Director Password Login State
-  const [directorEmail, setDirectorEmail] = useState('rahulpranami101@gmail.com');
-  const [directorPassword, setDirectorPassword] = useState('');
-  const [directorLoading, setDirectorLoading] = useState(false);
-
-  // Client OTP State
-  const [clientContact, setClientContact] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [clientLoading, setClientLoading] = useState(false);
-
-  // Alerts
+  const [mode, setMode] = useState<'login' | 'forgot'>('login');
+  const [email, setEmail] = useState('rahulpranami101@gmail.com');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
-  const handleDirectorLogin = async () => {
-    if (!directorEmail.trim() || !directorPassword.trim()) {
-      setFeedback({ type: 'error', message: 'Please enter both your email identifier and password.' });
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter both your email and password.' });
       return;
     }
 
-    setDirectorLoading(true);
+    setLoading(true);
     setFeedback(null);
 
-    const res = await signInWithPassword(directorEmail, directorPassword);
-    setDirectorLoading(false);
+    const res = await signInWithPassword(email, password);
+    setLoading(false);
 
     if (res.success) {
-      setFeedback({ type: 'success', message: 'Clearance verified. Entering Studio Console...' });
+      setFeedback({ type: 'success', message: 'Access granted. Entering Studio Console...' });
       setTimeout(() => {
         router.replace('/admin' as any);
       }, 400);
     } else {
-      setFeedback({ type: 'error', message: res.message || 'Authentication failed. Please check credentials.' });
+      setFeedback({
+        type: 'error',
+        message: res.message || 'Invalid credentials. Please verify your email and password.',
+      });
     }
   };
 
-  const handleSendClientOtp = async () => {
-    if (!clientContact.trim()) {
-      setFeedback({ type: 'error', message: 'Please enter your email or mobile number.' });
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setFeedback({ type: 'error', message: 'Please enter your email to receive a password reset link.' });
       return;
     }
 
-    setClientLoading(true);
+    setLoading(true);
     setFeedback(null);
 
-    const res = await signInWithOtp(clientContact);
-    setClientLoading(false);
+    const res = await resetPasswordForEmail(email);
+    setLoading(false);
 
     if (res.success) {
-      setOtpSent(true);
-      setFeedback({ type: 'success', message: '6-digit verification code has been dispatched.' });
+      setFeedback({
+        type: 'success',
+        message: 'Password reset link sent to your email. Please check your inbox and click the recovery link.',
+      });
     } else {
-      setFeedback({ type: 'error', message: res.message || 'Failed to dispatch code. Please retry.' });
-    }
-  };
-
-  const handleVerifyClientOtp = async () => {
-    if (!otpCode.trim()) {
-      setFeedback({ type: 'error', message: 'Please enter the 6-digit OTP code.' });
-      return;
-    }
-
-    setClientLoading(true);
-    setFeedback(null);
-
-    const res = await verifyOtp(clientContact, otpCode);
-    setClientLoading(false);
-
-    if (res.success) {
-      setFeedback({ type: 'success', message: 'Access verified. Unlocking private archive...' });
-      // Parent component will re-render client view once auth updates
-    } else {
-      setFeedback({ type: 'error', message: res.message || 'Invalid or expired verification code.' });
+      setFeedback({
+        type: 'error',
+        message: res.message || 'Unable to send password reset email. Please try again.',
+      });
     }
   };
 
   return (
     <View style={styles.backdrop}>
       <View style={styles.card}>
-        {/* Emblem & Editorial Masthead */}
+        {/* Emblem & Minimal Header */}
         <View style={styles.header}>
           <Image
             source={require('@/assets/images/studio-logo-transparent.png')}
             style={styles.logo}
             contentFit="contain"
           />
-          <Text style={styles.motto}>YOUR MOMENTS. YOUR MEMORIES.</Text>
-          <Text style={styles.portalTitle}>Studio Web Portal</Text>
+          <Text style={styles.portalTitle}>
+            {mode === 'login' ? 'Super Admin Sign In' : 'Reset Password'}
+          </Text>
           <Text style={styles.portalSubtitle}>
-            Secure authentication required to access private archives and studio controls.
+            {mode === 'login'
+              ? 'Enter your credentials to access the studio console.'
+              : 'Enter your email to receive a secure recovery link.'}
           </Text>
         </View>
 
-        {/* Tab Switcher */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'director' && styles.tabBtnActive]}
-            onPress={() => {
-              setActiveTab('director');
-              setFeedback(null);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'director' && styles.tabTextActive]}>
-              Studio Director
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'client' && styles.tabBtnActive]}
-            onPress={() => {
-              setActiveTab('client');
-              setFeedback(null);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tabText, activeTab === 'client' && styles.tabTextActive]}>
-              Client / VIP Guest
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Feedback message */}
+        {/* Feedback Alert */}
         {feedback && (
-          <View style={[styles.feedbackBox, feedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess]}>
-            <Text style={[styles.feedbackText, feedback.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess]}>
+          <View
+            style={[
+              styles.feedbackBox,
+              feedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess,
+            ]}
+          >
+            <Text
+              style={[
+                styles.feedbackText,
+                feedback.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess,
+              ]}
+            >
               {feedback.message}
             </Text>
           </View>
         )}
 
-        {/* TAB 1: STUDIO DIRECTOR / SUPER ADMIN (PASSWORD) */}
-        {activeTab === 'director' && (
-          <View style={styles.formSection}>
+        {mode === 'login' ? (
+          /* Login Form */
+          <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>DIRECTOR EMAIL IDENTIFIER</Text>
+              <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                value={directorEmail}
-                onChangeText={setDirectorEmail}
-                placeholder="rahulpranami101@gmail.com"
-                placeholderTextColor="#94A3B8"
-                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="admin@purusharthstudio.com"
+                placeholderTextColor="#9ca3af"
                 keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>MASTER PASSWORD</Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Password</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setFeedback(null);
+                    setMode('forgot');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.forgotLink}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={[styles.input, { paddingRight: 48 }]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#9ca3af"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onSubmitEditing={handleLogin}
+                />
+                <TouchableOpacity
+                  style={styles.eyeBtn}
+                  onPress={() => setShowPassword(!showPassword)}
+                  activeOpacity={0.7}
+                >
+                  <AdminIcon
+                    name={showPassword ? 'close' : 'face'}
+                    size={18}
+                    color="#6b7280"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.submitBtnText}>Sign In</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          /* Forgot Password Form */
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
               <TextInput
                 style={styles.input}
-                value={directorPassword}
-                onChangeText={setDirectorPassword}
-                placeholder="••••••••••••"
-                placeholderTextColor="#94A3B8"
-                secureTextEntry
+                value={email}
+                onChangeText={setEmail}
+                placeholder="admin@purusharthstudio.com"
+                placeholderTextColor="#9ca3af"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onSubmitEditing={handleForgotPassword}
               />
             </View>
 
             <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleDirectorLogin}
-              disabled={directorLoading}
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+              onPress={handleForgotPassword}
+              disabled={loading}
               activeOpacity={0.8}
             >
-              {directorLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+              {loading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text style={styles.primaryButtonText}>Sign In to Operations Console →</Text>
+                <Text style={styles.submitBtnText}>Send Recovery Link</Text>
               )}
             </TouchableOpacity>
 
-            <Text style={styles.hintText}>
-              Configured for Super Admin clearance with full studio event & media control.
-            </Text>
-          </View>
-        )}
-
-        {/* TAB 2: CLIENT / VIP MEMBER (OTP) */}
-        {activeTab === 'client' && (
-          <View style={styles.formSection}>
-            {!otpSent ? (
-              <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>EMAIL OR MOBILE NUMBER</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={clientContact}
-                    onChangeText={setClientContact}
-                    placeholder="guest@domain.com or +91 98765 43210"
-                    placeholderTextColor="#94A3B8"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={handleSendClientOtp}
-                  disabled={clientLoading}
-                  activeOpacity={0.8}
-                >
-                  {clientLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>Request Secure OTP Passcode →</Text>
-                  )}
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>ENTER 6-DIGIT PASSCODE</Text>
-                  <TextInput
-                    style={[styles.input, styles.otpInput]}
-                    value={otpCode}
-                    onChangeText={setOtpCode}
-                    placeholder="••••••"
-                    placeholderTextColor="#94A3B8"
-                    keyboardType="number-pad"
-                    maxLength={8}
-                    autoFocus
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={handleVerifyClientOtp}
-                  disabled={clientLoading}
-                  activeOpacity={0.8}
-                >
-                  {clientLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>Verify & Unlock Private Vault</Text>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.linkButton}
-                  onPress={() => {
-                    setOtpSent(false);
-                    setOtpCode('');
-                  }}
-                >
-                  <Text style={styles.linkButtonText}>← Edit Contact or Resend Code</Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            <Text style={styles.hintText}>
-              Clients can also access their event directly on the mobile app using their private Event Code.
-            </Text>
+            <TouchableOpacity
+              style={styles.backToLoginBtn}
+              onPress={() => {
+                setFeedback(null);
+                setMode('login');
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backToLoginText}>← Back to Sign In</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -281,167 +234,146 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     minHeight: '100%',
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#f5f0ea',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   card: {
     width: '100%',
-    maxWidth: 480,
-    backgroundColor: '#FFFFFF',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 36,
     borderWidth: 1,
-    borderColor: '#EFEBE4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 8,
+    borderColor: '#e8e2d8',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 20px 40px rgba(44, 34, 20, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05)',
+        }
+      : {
+          elevation: 6,
+        }),
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   logo: {
     width: 170,
     height: 48,
-    marginBottom: 8,
-  },
-  motto: {
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 2,
-    color: '#755A2A',
-    marginBottom: 10,
-    textTransform: 'uppercase',
+    marginBottom: 18,
   },
   portalTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1C1917',
+    color: '#1a1917',
+    letterSpacing: -0.3,
     marginBottom: 6,
-    fontFamily: Platform.OS === 'web' ? 'Georgia, serif' : undefined,
   },
   portalSubtitle: {
     fontSize: 13,
-    color: '#78716C',
+    color: '#6e6a63',
     textAlign: 'center',
     lineHeight: 18,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F5F2EC',
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 24,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#78716C',
-  },
-  tabTextActive: {
-    color: '#1C1917',
-    fontWeight: '700',
-  },
-  formSection: {
-    marginTop: 4,
+  form: {
+    width: '100%',
   },
   inputGroup: {
     marginBottom: 18,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   label: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: '#44403C',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#38342e',
     marginBottom: 6,
   },
-  input: {
-    height: 48,
-    backgroundColor: '#FAF8F5',
-    borderWidth: 1,
-    borderColor: '#E7E0D6',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    color: '#1C1917',
-  },
-  otpInput: {
-    textAlign: 'center',
-    fontSize: 22,
-    letterSpacing: 8,
-    fontWeight: '700',
-  },
-  primaryButton: {
-    height: 48,
-    backgroundColor: '#755A2A',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  linkButton: {
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  linkButtonText: {
-    color: '#755A2A',
+  forgotLink: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#755A2A',
   },
-  hintText: {
-    fontSize: 11,
-    color: '#A8A29E',
-    textAlign: 'center',
-    marginTop: 18,
-    lineHeight: 16,
+  input: {
+    width: '100%',
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#dcd6cb',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    color: '#1a1917',
+    backgroundColor: '#faf8f5',
+    outlineStyle: 'none' as any,
+  },
+  passwordWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 12,
+    top: 13,
+    padding: 2,
+  },
+  submitBtn: {
+    width: '100%',
+    height: 46,
+    backgroundColor: '#1a1917',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#1a1917',
+  },
+  submitBtnDisabled: {
+    opacity: 0.7,
+  },
+  submitBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  backToLoginBtn: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  backToLoginText: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '500',
   },
   feedbackBox: {
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 18,
+    borderWidth: 1,
   },
   feedbackError: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
   },
   feedbackSuccess: {
-    backgroundColor: '#F0FDF4',
-    borderWidth: 1,
-    borderColor: '#86EFAC',
+    backgroundColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
   },
   feedbackText: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
   },
   feedbackTextError: {
-    color: '#B91C1C',
+    color: '#991b1b',
   },
   feedbackTextSuccess: {
-    color: '#15803D',
+    color: '#166534',
   },
 });
