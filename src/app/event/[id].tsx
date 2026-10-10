@@ -133,7 +133,7 @@ export default function EventDetailScreen() {
   });
 
   const handleOpenOriginal = (url: string) => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.open(url, '_blank');
     } else {
       Linking.openURL(url);

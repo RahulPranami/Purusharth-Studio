@@ -17,7 +17,7 @@ jobs:
   # ==========================================
   web:
     name: Build & Deploy Web
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pages: write
@@ -30,26 +30,32 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (v22 Active LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
 
       - name: Create Production Environment File
+        env:
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
+          R2_BUCKET: ${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
+          R2_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'c5b183bb011ad958f341adda9e499c13' }}
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec' }}
         run: |
-          cat << 'EOF' > .env.local
-          EXPO_BASE_URL=/Purusharth-Studio
-          EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
-          EXPO_PUBLIC_SUPABASE_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
-          EXPO_PUBLIC_R2_BUCKET=${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
-          EXPO_PUBLIC_R2_PUBLIC_URL=${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
-          CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'c5b183bb011ad958f341adda9e499c13' }}
-          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN || 'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec' }}
-          EOF
+          echo "EXPO_BASE_URL=/Purusharth-Studio" > .env.local
+          echo "EXPO_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> .env.local
+          echo "EXPO_PUBLIC_SUPABASE_KEY=$SUPABASE_KEY" >> .env.local
+          echo "EXPO_PUBLIC_R2_BUCKET=$R2_BUCKET" >> .env.local
+          echo "EXPO_PUBLIC_R2_PUBLIC_URL=$R2_URL" >> .env.local
+          echo "CLOUDFLARE_ACCOUNT_ID=$CF_ACCOUNT" >> .env.local
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> .env.local
+          echo "Created .env.local successfully"
 
       - name: Export Web Bundle
         run: npx expo export --platform web
@@ -85,7 +91,7 @@ jobs:
   # ==========================================
   android:
     name: Build Android APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
@@ -93,10 +99,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (v22 Active LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Setup Java (JDK 17)
@@ -109,16 +115,22 @@ jobs:
         run: npm install
 
       - name: Create Production Environment File
+        env:
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
+          R2_BUCKET: ${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
+          R2_URL: ${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'c5b183bb011ad958f341adda9e499c13' }}
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec' }}
         run: |
-          cat << 'EOF' > .env.local
-          EXPO_BASE_URL=/Purusharth-Studio
-          EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
-          EXPO_PUBLIC_SUPABASE_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
-          EXPO_PUBLIC_R2_BUCKET=${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
-          EXPO_PUBLIC_R2_PUBLIC_URL=${{ secrets.EXPO_PUBLIC_R2_PUBLIC_URL || 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev' }}
-          CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'c5b183bb011ad958f341adda9e499c13' }}
-          CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN || 'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec' }}
-          EOF
+          echo "EXPO_BASE_URL=/Purusharth-Studio" > .env.local
+          echo "EXPO_PUBLIC_SUPABASE_URL=$SUPABASE_URL" >> .env.local
+          echo "EXPO_PUBLIC_SUPABASE_KEY=$SUPABASE_KEY" >> .env.local
+          echo "EXPO_PUBLIC_R2_BUCKET=$R2_BUCKET" >> .env.local
+          echo "EXPO_PUBLIC_R2_PUBLIC_URL=$R2_URL" >> .env.local
+          echo "CLOUDFLARE_ACCOUNT_ID=$CF_ACCOUNT" >> .env.local
+          echo "CLOUDFLARE_API_TOKEN=$CF_TOKEN" >> .env.local
+          echo "Created .env.local successfully"
 
       - name: Expo Prebuild (Generate Native Android Project)
         run: npx expo prebuild --platform android --clean

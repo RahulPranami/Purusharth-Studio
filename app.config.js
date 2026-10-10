@@ -1,9 +1,10 @@
-module.exports = ({ config }) => {
+module.exports = ({ config = {} } = {}) => {
+  const baseConfig = config || {};
   const baseUrl = process.env.EXPO_BASE_URL || '';
   return {
-    ...config,
+    ...baseConfig,
     experiments: {
-      ...config.experiments,
+      ...(baseConfig.experiments || {}),
       ...(baseUrl ? { baseUrl } : {}),
     },
   };
