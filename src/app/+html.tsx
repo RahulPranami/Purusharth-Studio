@@ -17,6 +17,11 @@ export default function RootHtml({ children }: { children: React.ReactNode }) {
         />
         <title>Purusharth Studio | Luxury Event Platform</title>
 
+        {/* Favicon & Touch Icons */}
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+
         {/* Material Symbols Outlined Font */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
