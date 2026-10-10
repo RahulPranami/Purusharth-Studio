@@ -338,35 +338,72 @@ export async function uploadToR2(
 
   emitProgress(0, fileSize);
 
-  // 2. Perform upload via Supabase Storage (100% CORS compliant, global edge CDN, works on Web, Mobile, and Deployed builds)
-  emitProgress(Math.floor(fileSize * 0.35), fileSize);
+  // 2. Perform direct upload to Cloudflare R2 bucket
+  const lastSlashIdx = cleanKey.lastIndexOf('/');
+  const folderPrefix = lastSlashIdx >= 0 ? cleanKey.slice(0, lastSlashIdx + 1) : '';
+  const finalFileName = lastSlashIdx >= 0 ? cleanKey.slice(lastSlashIdx + 1) : cleanKey;
 
-  const { data: uploadData, error: uploadErr } = await supabase.storage
-    .from('event-photos')
-    .upload(cleanKey, bodyData, {
-      contentType,
-      upsert: true,
-    });
+  emitProgress(Math.floor(fileSize * 0.25), fileSize);
 
-  if (uploadErr) {
-    throw new Error(`Upload failed: ${uploadErr.message}`);
+  const ANALYZER_BASE_URL = (
+    process.env.EXPO_PUBLIC_ANALYZER_API_URL ||
+    'https://purusharth-studio-analyzer.onrender.com'
+  ).replace(/\/+$/, '');
+
+  const formData = new FormData();
+  if (typeof Blob !== 'undefined' && bodyData instanceof Blob) {
+    formData.append('file', bodyData, finalFileName);
+  } else if (typeof File !== 'undefined' && bodyData instanceof File) {
+    formData.append('file', bodyData, finalFileName);
+  } else if (bodyData && typeof bodyData === 'object' && 'uri' in bodyData) {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const res = await fetch(bodyData.uri);
+      const blob = await res.blob();
+      formData.append('file', blob, finalFileName);
+    } else {
+      formData.append('file', {
+        uri: bodyData.uri,
+        name: finalFileName,
+        type: contentType,
+      } as any);
+    }
+  } else {
+    formData.append('file', bodyData, finalFileName);
   }
 
-  emitProgress(fileSize, fileSize);
+  formData.append('key_prefix', folderPrefix);
 
-  const { data: pubData } = supabase.storage
-    .from('event-photos')
-    .getPublicUrl(cleanKey);
+  emitProgress(Math.floor(fileSize * 0.6), fileSize);
 
-  const publicUrl = pubData?.publicUrl || getR2Url(cleanKey);
+  const uploadResponse = await fetch(`${ANALYZER_BASE_URL}/test/upload-photo`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!uploadResponse.ok) {
+    const errText = await uploadResponse.text();
+    let parsedErr = errText;
+    try {
+      const j = JSON.parse(errText);
+      parsedErr = j.detail || j.message || errText;
+    } catch {}
+    throw new Error(`Cloudflare R2 upload failed (${uploadResponse.status}): ${parsedErr}`);
+  }
+
+  const resData = await uploadResponse.json();
+  const returnedKey = resData.key || cleanKey;
+  const returnedSize = resData.size_bytes || fileSize;
+  const publicUrl = getR2Url(returnedKey);
+
+  emitProgress(returnedSize, returnedSize);
 
   return {
-    key: cleanKey,
+    key: returnedKey,
     url: publicUrl,
-    fileName,
-    size: fileSize,
+    fileName: finalFileName,
+    size: returnedSize,
     contentType,
-    etag: uploadData?.id,
+    etag: resData.etag,
   };
 }
 

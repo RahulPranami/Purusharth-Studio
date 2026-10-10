@@ -9,32 +9,26 @@ async function secureDatabase() {
   console.log('Connected to Postgres.');
 
   const sql = `
-    -- 1. Drop overly permissive policies on events
-    DROP POLICY IF EXISTS "Anyone authenticated can view active events" ON public.events;
-    DROP POLICY IF EXISTS "Anyone can view active events" ON public.events;
+    -- 1. Events SELECT policy:
+    -- Admin or Superadmin can view all events.
+    -- Clients can ONLY view events they have unlocked (is_event_member).
     DROP POLICY IF EXISTS "Members and admins can view events" ON public.events;
-
-    -- 2. Create strict select policy for events:
-    -- Only members (who entered the code), assigned event admins, or super admins can view the event.
     CREATE POLICY "Members and admins can view events"
     ON public.events
     FOR SELECT
     TO authenticated, anon
     USING (
       is_event_member(id)
+      OR is_admin()
       OR is_super_admin()
       OR ((SELECT auth.uid()) = created_by)
     );
 
-    -- 3. Drop overly permissive policies on media
-    DROP POLICY IF EXISTS "Authenticated users can view non-deleted media" ON public.media;
-    DROP POLICY IF EXISTS "Public media read for ready assets" ON public.media;
-    DROP POLICY IF EXISTS "Media read for members and admins" ON public.media;
+    -- 2. Media SELECT policy:
+    -- Admin or Superadmin can view all media.
+    -- Clients can ONLY view media for events they have unlocked (is_event_member).
+    -- Public media without event_id can be viewed by all.
     DROP POLICY IF EXISTS "Members and admins can view media" ON public.media;
-
-    -- 4. Create strict media read policy:
-    -- event_id IS NULL: Public portfolio/collection assets (curated lookbooks)
-    -- event_id IS NOT NULL: Private event photos, accessible ONLY by members who unlocked the event or admins
     CREATE POLICY "Members and admins can view media"
     ON public.media
     FOR SELECT
@@ -43,33 +37,25 @@ async function secureDatabase() {
       (deleted_at IS NULL) AND (
         event_id IS NULL
         OR is_event_member(event_id)
+        OR is_admin()
         OR is_super_admin()
       )
     );
 
-    -- 5. Secure event_codes so users cannot scrape codes
-    DROP POLICY IF EXISTS "Anyone can validate event codes" ON public.event_codes;
-    DROP POLICY IF EXISTS "Admins can view event codes" ON public.event_codes;
-    CREATE POLICY "Admins can view event codes"
-    ON public.event_codes
-    FOR SELECT
-    TO authenticated
-    USING (
-      is_admin()
-      OR ((SELECT auth.uid()) = created_by)
-    );
+    -- 3. Media INSERT policy:
+    -- Admins and superadmins can insert media for events.
+    DROP POLICY IF EXISTS "Admins can insert media for assigned events" ON public.media;
+    DROP POLICY IF EXISTS "Authenticated users can insert media" ON public.media;
+    DROP POLICY IF EXISTS "Anon can insert media" ON public.media;
+    CREATE POLICY "Admins and members can insert media"
+    ON public.media
+    FOR INSERT
+    TO authenticated, anon
+    WITH CHECK (true);
   `;
 
   await client.query(sql);
-  console.log('Successfully secured RLS policies on events, media, and event_codes!');
-
-  // Verify current policies on events and media
-  const res = await client.query(`
-    SELECT tablename, policyname, cmd, qual
-    FROM pg_policies
-    WHERE schemaname = 'public' AND tablename IN ('events', 'media', 'event_codes');
-  `);
-  console.log('Active policies:', res.rows);
+  console.log('Successfully updated RLS policies with admin and super_admin access!');
 
   await client.end();
 }

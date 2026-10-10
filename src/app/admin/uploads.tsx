@@ -5,10 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  useWindowDimensions,
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminIcon } from '@/components/admin/AdminIcon';
 import { AdminColors, AdminTypography } from '@/constants/admin-theme';
@@ -38,9 +38,7 @@ interface EventOption {
 }
 
 export default function AdminPhotoUploadsScreen() {
-  const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
-  const isDesktop = width >= 1024;
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [events, setEvents] = useState<EventOption[]>([]);
@@ -87,6 +85,12 @@ export default function AdminPhotoUploadsScreen() {
   const handleFilesSelected = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
+    const targetEventId = selectedEventId || (events[0]?.id ? events[0].id : '');
+    if (!targetEventId) {
+      alert('Please select an event from the dropdown before uploading photos.');
+      return;
+    }
+
     setIsUploading(true);
     const newItems: QueueItem[] = [];
 
@@ -104,9 +108,8 @@ export default function AdminPhotoUploadsScreen() {
         size: file.size,
         previewUrl,
         progress: 10,
-        speed: '38.4 MB/s',
+        speed: 'Connecting to Cloudflare R2...',
         status: 'uploading',
-        sha: Math.random().toString(16).substring(2, 10),
       };
 
       newItems.push(queueItem);
@@ -114,17 +117,15 @@ export default function AdminPhotoUploadsScreen() {
 
     setQueue((prev) => [...newItems, ...prev]);
 
-    // Process uploads through uploadToR2
+    // Process uploads through uploadToR2 directly to Cloudflare R2
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const targetId = newItems[i].id;
 
-      const eventFolder = selectedEventId || (events[0]?.id ? events[0].id : 'general');
-
       try {
         const uploadRes = await uploadToR2(
           file,
-          `events/${eventFolder}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`,
+          `events/${targetEventId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`,
           (p) => {
             setQueue((prev) =>
               prev.map((item) =>
@@ -132,7 +133,7 @@ export default function AdminPhotoUploadsScreen() {
                   ? {
                       ...item,
                       progress: typeof p === 'number' ? p : p.percent,
-                      speed: `${(35 + Math.random() * 15).toFixed(1)} MB/s`,
+                      speed: 'Streaming to R2...',
                     }
                   : item
               )
@@ -140,17 +141,15 @@ export default function AdminPhotoUploadsScreen() {
           }
         );
 
-        // Store into Supabase `media` table and sync total_photos
+        // Store into Supabase `media` table under targetEventId
         try {
           await recordMediaInDatabase({
-            eventId: eventFolder.startsWith('default') || eventFolder === 'general'
-              ? null
-              : eventFolder,
+            eventId: targetEventId,
             objectKey: uploadRes.key,
             url: uploadRes.url,
             sizeBytes: uploadRes.size,
             mimeType: uploadRes.contentType,
-            title: uploadRes.fileName,
+            title: uploadRes.fileName.replace(/^[0-9]+_/, '').replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
             mediaType: 'photo',
             status: 'ready',
           });
@@ -161,11 +160,13 @@ export default function AdminPhotoUploadsScreen() {
         // Real-time Facial Indexing via Analyzer API
         let detectedFaces = 0;
         try {
-          const indexRes = await indexPhotoInAnalyzer(
-            uploadRes.key,
-            eventFolder.startsWith('default') || eventFolder === 'general' ? 'default' : eventFolder
+          setQueue((prev) =>
+            prev.map((item) =>
+              item.id === targetId ? { ...item, status: 'indexing' } : item
+            )
           );
-          detectedFaces = indexRes.faces_detected;
+          const indexRes = await indexPhotoInAnalyzer(uploadRes.key, targetEventId);
+          detectedFaces = typeof indexRes.faces_detected === 'number' ? indexRes.faces_detected : 0;
         } catch (idxErr) {
           console.warn('Facial indexing non-fatal error:', idxErr);
         }
@@ -189,29 +190,13 @@ export default function AdminPhotoUploadsScreen() {
         console.error('Upload failed for file:', file.name, uploadErr);
         setQueue((prev) =>
           prev.map((item) =>
-            item.id === targetId ? { ...item, status: 'failed', speed: uploadErr.message || 'Failed' } : item
+            item.id === targetId ? { ...item, status: 'failed', speed: uploadErr.message || 'Upload failed' } : item
           )
         );
       }
     }
 
     setIsUploading(false);
-  };
-
-  const handlePauseAll = () => {
-    setQueue((prev) =>
-      prev.map((item) =>
-        item.status === 'uploading' ? { ...item, status: 'paused' } : item
-      )
-    );
-  };
-
-  const handleResumeAll = () => {
-    setQueue((prev) =>
-      prev.map((item) =>
-        item.status === 'paused' ? { ...item, status: 'uploading' } : item
-      )
-    );
   };
 
   const handleClearCompleted = () => {
@@ -246,22 +231,12 @@ export default function AdminPhotoUploadsScreen() {
         />
       )}
 
-      {/* Top Action & Context Banner */}
+      {/* Top Clean Header & Target Event Selector */}
       <View style={styles.topContextBanner}>
         <View style={styles.bannerLeft}>
-          <View style={styles.pipelinePillRow}>
-            <View style={styles.pipelinePill}>
-              <View style={styles.pulseDot} />
-              <Text style={styles.pipelinePillText}>
-                DIRECT S3/R2 INGEST PIPELINE
-              </Text>
-            </View>
-            <Text style={styles.sessionIdText}>Session ID: #ING-2025-089A</Text>
-          </View>
-          <Text style={styles.mainTitle}>Bulk Photo Upload</Text>
+          <Text style={styles.mainTitle}>Photo Uploads</Text>
           <Text style={styles.subTitle}>
-            Upload high-resolution event photos securely and let AI organize
-            attendee galleries in the background.
+            Upload high-resolution photographs directly to Cloudflare R2 archive and run facial recognition indexing.
           </Text>
         </View>
 
@@ -269,7 +244,7 @@ export default function AdminPhotoUploadsScreen() {
         <View style={styles.targetEventCard}>
           <View style={styles.targetEventContent}>
             <View style={styles.targetEventIconBox}>
-              <AdminIcon name="corporate_fare" size={24} color={AdminColors.primary} />
+              <AdminIcon name="calendar_month" size={24} color={AdminColors.primary} />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -282,7 +257,7 @@ export default function AdminPhotoUploadsScreen() {
                 {currentEvent.title}
               </Text>
               <Text style={styles.targetEventMeta} numberOfLines={1}>
-                {currentEvent.event_date} • {currentEvent.location}
+                {currentEvent.event_date || 'Upcoming'} • {currentEvent.location || 'Private Venue'}
               </Text>
             </View>
           </View>
@@ -292,7 +267,7 @@ export default function AdminPhotoUploadsScreen() {
             onPress={() => setIsEventPickerOpen(!isEventPickerOpen)}
           >
             <Text style={styles.switchEventBtnText}>
-              {isEventPickerOpen ? 'Close' : 'Switch Event'}
+              {isEventPickerOpen ? 'Done' : 'Switch Event'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -321,346 +296,262 @@ export default function AdminPhotoUploadsScreen() {
         </View>
       )}
 
-      {/* Telemetry & Ingestion Summary Bar (4 Cards) */}
-      <View style={styles.telemetryBarGrid}>
-        {/* Metric 1 */}
-        <View style={styles.metricCard}>
-          <View style={styles.metricCardHeader}>
-            <Text style={styles.metricLabel}>Photos In Queue</Text>
-            <AdminIcon name="collections" size={19} color={AdminColors.primary} />
-          </View>
-          <View style={styles.metricNumbers}>
-            <Text style={styles.metricValue}>
-              {(4250 + queue.length).toLocaleString()}
-            </Text>
-            <Text style={styles.metricUnit}>files</Text>
-          </View>
-          <View style={styles.metricFooter}>
-            <Text style={styles.metricFooterText}>Payload size: 18.4 GB</Text>
-            <Text style={styles.metricFooterHighlight}>85% Indexed</Text>
-          </View>
-          <View style={styles.sparklineTrack}>
-            <View style={[styles.sparklineBar, { width: '85%' }]} />
-          </View>
-        </View>
-
-        {/* Metric 2 */}
-        <View style={styles.metricCard}>
-          <View style={styles.metricCardHeader}>
-            <Text style={styles.metricLabel}>Uploading Speed</Text>
-            <AdminIcon name="speed" size={19} color={AdminColors.tertiary} />
-          </View>
-          <View style={styles.metricNumbers}>
-            <Text style={styles.metricValue}>42.8</Text>
-            <Text style={styles.metricUnit}>MB/s</Text>
-          </View>
-          <View style={styles.metricFooter}>
-            <Text style={styles.metricFooterText}>12 parallel threads</Text>
-            <Text style={styles.metricFooterHighlight}>R2 / S3 Multi</Text>
-          </View>
-          <View style={styles.sparklineTrack}>
-            <View
-              style={[
-                styles.sparklineBar,
-                { width: '92%', backgroundColor: AdminColors.tertiary },
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Metric 3 */}
-        <View style={styles.metricCard}>
-          <View style={styles.metricCardHeader}>
-            <Text style={styles.metricLabel}>Faces Detected</Text>
-            <AdminIcon name="face" size={19} color={AdminColors.secondary} />
-          </View>
-          <View style={styles.metricNumbers}>
-            <Text style={styles.metricValue}>1,842</Text>
-            <Text style={styles.metricUnit}>landmarks</Text>
-          </View>
-          <View style={styles.metricFooter}>
-            <Text style={styles.metricFooterText}>Confidence &gt; 99.4%</Text>
-            <Text style={styles.metricFooterHighlight}>Embeddings OK</Text>
-          </View>
-          <View style={styles.sparklineTrack}>
-            <View
-              style={[
-                styles.sparklineBar,
-                { width: '64%', backgroundColor: AdminColors.primaryContainer },
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Metric 4 */}
-        <View style={styles.metricCard}>
-          <View style={styles.metricCardHeader}>
-            <Text style={styles.metricLabel}>Processing Status</Text>
-            <AdminIcon name="memory" size={19} color={AdminColors.primary} />
-          </View>
-          <View style={styles.metricNumbers}>
-            <Text style={styles.metricValue}>Node #04</Text>
-            <View style={styles.activePillSmall}>
-              <Text style={styles.activePillSmallText}>Active</Text>
-            </View>
-          </View>
-          <View style={styles.metricFooter}>
-            <Text style={styles.metricFooterText}>Python Vector Engine</Text>
-            <Text style={styles.metricFooterHighlight}>CPU 34%</Text>
-          </View>
-          <View style={styles.sparklineTrack}>
-            <View
-              style={[
-                styles.sparklineBar,
-                { width: '34%', backgroundColor: '#10b981' },
-              ]}
-            />
-          </View>
-        </View>
-      </View>
-
       {/* Upload Drop Zone Area */}
       <View
         style={[
           styles.dropZoneContainer,
           isDragging && styles.dropZoneDragging,
         ]}
+        {...(Platform.OS === 'web'
+          ? ({
+              onDragOver: (e: any) => {
+                e.preventDefault();
+                setIsDragging(true);
+              },
+              onDragLeave: (e: any) => {
+                e.preventDefault();
+                setIsDragging(false);
+              },
+              onDrop: (e: any) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer && e.dataTransfer.files) {
+                  handleFilesSelected(e.dataTransfer.files);
+                }
+              },
+            } as any)
+          : {})}
       >
         <View style={styles.dropZoneCloudBox}>
           <AdminIcon name="cloud_upload" size={32} color="#ffffff" />
         </View>
 
         <Text style={styles.dropZoneTitle}>
-          Drag and drop photo batches or folders here
+          Drag and drop event photographs here
         </Text>
         <Text style={styles.dropZoneSubtitle}>
-          Drop your multi-gigabyte event memory cards directly. High-resolution
-          originals stream straight to Cloudflare R2 object storage.
+          Select high-resolution photos for {currentEvent.title}. Originals stream directly to Cloudflare R2 and index for AI facial recognition.
         </Text>
 
         {/* File Picker Actions */}
         <View style={styles.dropZoneActionsRow}>
           <TouchableOpacity
-            style={styles.selectFilesBtn}
-            onPress={() => {
-              if (Platform.OS === 'web' && fileInputRef.current) {
-                fileInputRef.current.click();
-              } else {
-                // Mock mobile upload addition
-                handleFilesSelected([
-                  {
-                    name: `IMG_${Math.floor(Math.random() * 8000) + 1000}.JPG`,
-                    size: 14.5 * 1024 * 1024,
-                  } as any,
-                ]);
-              }
-            }}
-          >
-            <AdminIcon name="photo_library" size={18} color="#ffffff" />
-            <Text style={styles.selectFilesBtnText}>Select Photo Files</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.selectFolderBtn}
+            style={[styles.selectFilesBtn, isUploading && { opacity: 0.85 }]}
+            disabled={isUploading}
             onPress={() => {
               if (Platform.OS === 'web' && fileInputRef.current) {
                 fileInputRef.current.click();
               }
             }}
           >
-            <AdminIcon name="folder_zip" size={18} color={AdminColors.onSurface} />
-            <Text style={styles.selectFolderBtnText}>Select Folder / ZIP Archive</Text>
+            {isUploading ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <AdminIcon name="photo_library" size={18} color="#ffffff" />
+            )}
+            <Text style={styles.selectFilesBtnText}>
+              {isUploading ? 'Streaming to R2...' : 'Choose Photo Files'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Supported Formats & Security Badge */}
+        {/* Supported Formats */}
         <View style={styles.dropZoneFooterTrust}>
           <View style={styles.trustBadge}>
             <AdminIcon name="info" size={14} color={AdminColors.outline} />
             <Text style={styles.trustBadgeText}>
-              JPG, JPEG, PNG, HEIC, WebP up to 50MB each. Max batch: 5,000 files.
+              JPG, JPEG, PNG, HEIC, WebP up to 50MB each.
             </Text>
           </View>
           <View style={styles.trustBadge}>
             <AdminIcon name="verified_user" size={14} color={AdminColors.primary} />
             <Text style={styles.trustBadgeText}>
-              Encrypted stream to private R2 bucket. Zero compression applied.
+              Direct stream to Cloudflare R2. Zero compression applied.
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Upload Queue & Realtime Processing Table */}
+      {/* Upload Queue Panel */}
       <View style={styles.queuePanel}>
         {/* Queue Control Header */}
         <View style={styles.queueHeaderRow}>
           <View style={styles.queueHeaderLeft}>
-            <View style={styles.activePulsingCircle} />
             <View>
-              <Text style={styles.queueTitle}>Active Upload Queue</Text>
+              <Text style={styles.queueTitle}>Upload Queue</Text>
               <Text style={styles.queueSubtitle}>
-                Batch #4: {queue.length} Files Shown (4,250 Total in Session)
+                {queue.length} file{queue.length === 1 ? '' : 's'} in current session
               </Text>
             </View>
           </View>
 
           {/* Action buttons */}
           <View style={styles.queueHeaderButtons}>
-            <TouchableOpacity
-              style={styles.queueBtn}
-              onPress={handlePauseAll}
-            >
-              <AdminIcon name="pause" size={16} color={AdminColors.onSurface} />
-              <Text style={styles.queueBtnText}>Pause All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.queueBtn}
-              onPress={handleResumeAll}
-            >
-              <AdminIcon name="play_arrow" size={16} color={AdminColors.onSurface} />
-              <Text style={styles.queueBtnText}>Resume All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.queueBtn}
-              onPress={handleRetryFailed}
-            >
-              <AdminIcon name="replay" size={16} color={AdminColors.error} />
-              <Text style={[styles.queueBtnText, { color: AdminColors.error }]}>
-                Retry Failed
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.queueBtn}
-              onPress={handleClearCompleted}
-            >
-              <Text style={styles.queueBtnText}>Clear Completed</Text>
-            </TouchableOpacity>
+            {selectedEventId ? (
+              <TouchableOpacity
+                style={[styles.queueBtn, { borderColor: AdminColors.primary }]}
+                onPress={() => router.push(`/event/${selectedEventId}` as any)}
+              >
+                <AdminIcon name="visibility" size={16} color={AdminColors.primary} />
+                <Text style={[styles.queueBtnText, { color: AdminColors.primary, fontWeight: '700' }]}>
+                  View Event Gallery →
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            {queue.some((q) => q.status === 'failed') && (
+              <TouchableOpacity
+                style={[styles.queueBtn, { borderColor: '#ef4444' }]}
+                onPress={handleRetryFailed}
+              >
+                <AdminIcon name="refresh" size={16} color="#ef4444" />
+                <Text style={[styles.queueBtnText, { color: '#ef4444' }]}>Retry Failed</Text>
+              </TouchableOpacity>
+            )}
+            {queue.some((q) => q.status === 'completed') && (
+              <TouchableOpacity
+                style={styles.queueBtn}
+                onPress={handleClearCompleted}
+              >
+                <Text style={styles.queueBtnText}>Clear Completed</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Table Rows */}
-        <View style={styles.tableWrapper}>
-          {/* Table Header */}
-          <View style={styles.tableHeaderRow}>
-            <Text style={[styles.thCell, { width: 64 }]}>Preview</Text>
-            <Text style={[styles.thCell, { flex: 2 }]}>File Name</Text>
-            <Text style={[styles.thCell, { width: 120 }]}>Resolution & Size</Text>
-            <Text style={[styles.thCell, { flex: 2 }]}>Upload Progress</Text>
-            <Text style={[styles.thCell, { flex: 1.5 }]}>AI Pipeline Status</Text>
-            <Text style={[styles.thCell, { width: 100, textAlign: 'right' }]}>
-              Actions
+        {/* Empty state or Table */}
+        {queue.length === 0 ? (
+          <View style={{ paddingVertical: 40, alignItems: 'center', justifyContent: 'center' }}>
+            <AdminIcon name="photo_library" size={36} color={AdminColors.outline} />
+            <Text style={{ marginTop: 12, fontSize: 15, fontWeight: '600', color: AdminColors.onSurface }}>
+              No Active Uploads
+            </Text>
+            <Text style={{ marginTop: 4, fontSize: 13, color: AdminColors.secondary }}>
+              Click &quot;Choose Photo Files&quot; above to begin uploading into {currentEvent.title}.
             </Text>
           </View>
+        ) : (
+          <View style={styles.tableWrapper}>
+            {/* Table Header */}
+            <View style={styles.tableHeaderRow}>
+              <Text style={[styles.thCell, { width: 64 }]}>Preview</Text>
+              <Text style={[styles.thCell, { flex: 2 }]}>File Name</Text>
+              <Text style={[styles.thCell, { width: 100 }]}>Size</Text>
+              <Text style={[styles.thCell, { flex: 2 }]}>Upload Progress</Text>
+              <Text style={[styles.thCell, { flex: 1.5 }]}>Status</Text>
+              <Text style={[styles.thCell, { width: 80, textAlign: 'right' }]}>
+                Action
+              </Text>
+            </View>
 
-          {/* Table Body */}
-          {queue.map((item) => {
-            const sizeMb = (item.size / (1024 * 1024)).toFixed(1);
-            return (
-              <View key={item.id} style={styles.tableBodyRow}>
-                {/* Preview Thumbnail */}
-                <View style={{ width: 64 }}>
-                  <Image
-                    source={{ uri: item.previewUrl }}
-                    style={styles.tableRowThumbnail}
-                  />
-                </View>
-
-                {/* File Name */}
-                <View style={{ flex: 2, paddingRight: 10 }}>
-                  <Text style={styles.tableFileName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.tableFileSha}>SHA: {item.sha}</Text>
-                </View>
-
-                {/* Size */}
-                <View style={{ width: 120 }}>
-                  <Text style={styles.tableResText}>24.2 MP</Text>
-                  <Text style={styles.tableSizeText}>{sizeMb} MB</Text>
-                </View>
-
-                {/* Upload Progress */}
-                <View style={{ flex: 2, paddingRight: 16 }}>
-                  <View style={styles.progressLabelRow}>
-                    <Text
-                      style={[
-                        styles.progressPercentText,
-                        item.status === 'completed' && { color: '#047857' },
-                      ]}
-                    >
-                      {item.status === 'completed'
-                        ? '100% Uploaded'
-                        : `${item.progress}% (${item.speed})`}
-                    </Text>
-                    <Text style={styles.progressLoadedText}>
-                      {((item.size * item.progress) / (100 * 1024 * 1024)).toFixed(1)}{' '}
-                      / {sizeMb} MB
-                    </Text>
-                  </View>
-                  <View style={styles.progressBarBg}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        { width: `${item.progress}%` },
-                        item.status === 'completed' && {
-                          backgroundColor: '#10b981',
-                        },
-                        item.status === 'failed' && {
-                          backgroundColor: AdminColors.error,
-                        },
-                      ]}
+            {/* Table Body */}
+            {queue.map((item) => {
+              const sizeMb = (item.size / (1024 * 1024)).toFixed(1);
+              return (
+                <View key={item.id} style={styles.tableBodyRow}>
+                  {/* Preview Thumbnail */}
+                  <View style={{ width: 64 }}>
+                    <Image
+                      source={{ uri: item.previewUrl }}
+                      style={styles.tableRowThumbnail}
                     />
                   </View>
-                </View>
 
-                {/* Status Badge */}
-                <View style={{ flex: 1.5 }}>
-                  {item.status === 'completed' ? (
-                    <View style={styles.statusCompletedBadge}>
-                      <View style={styles.completedDot} />
-                      <Text style={styles.statusCompletedText}>
-                        Completed ({item.facesCount || 12} Faces)
+                  {/* File Name */}
+                  <View style={{ flex: 2, paddingRight: 10 }}>
+                    <Text style={styles.tableFileName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                  </View>
+
+                  {/* Size */}
+                  <View style={{ width: 100 }}>
+                    <Text style={styles.tableSizeText}>{sizeMb} MB</Text>
+                  </View>
+
+                  {/* Upload Progress */}
+                  <View style={{ flex: 2, paddingRight: 16 }}>
+                    <View style={styles.progressLabelRow}>
+                      <Text
+                        style={[
+                          styles.progressPercentText,
+                          item.status === 'completed' && { color: '#047857' },
+                        ]}
+                      >
+                        {item.status === 'completed'
+                          ? '100% Uploaded'
+                          : `${item.progress}%`}
+                      </Text>
+                      <Text style={styles.progressLoadedText}>
+                        {((item.size * item.progress) / (100 * 1024 * 1024)).toFixed(1)}{' '}
+                        / {sizeMb} MB
                       </Text>
                     </View>
-                  ) : item.status === 'indexing' ? (
-                    <View style={styles.statusIndexingBadge}>
-                      <ActivityIndicator size="small" color="#b45309" />
-                      <Text style={styles.statusIndexingText}>Indexing Faces</Text>
+                    <View style={styles.progressBarBg}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          { width: `${item.progress}%` },
+                          item.status === 'completed' && {
+                            backgroundColor: '#10b981',
+                          },
+                          item.status === 'failed' && {
+                            backgroundColor: AdminColors.error,
+                          },
+                        ]}
+                      />
                     </View>
-                  ) : item.status === 'failed' ? (
-                    <View style={styles.statusFailedBadge}>
-                      <AdminIcon name="error" size={14} color={AdminColors.error} />
-                      <Text style={styles.statusFailedText}>Upload Failed</Text>
-                    </View>
-                  ) : item.status === 'paused' ? (
-                    <View style={styles.statusPausedBadge}>
-                      <AdminIcon name="pause" size={14} color={AdminColors.secondary} />
-                      <Text style={styles.statusPausedText}>Paused</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.statusUploadingBadge}>
-                      <ActivityIndicator size="small" color={AdminColors.primary} />
-                      <Text style={styles.statusUploadingText}>Uploading</Text>
-                    </View>
-                  )}
-                </View>
+                  </View>
 
-                {/* Actions */}
-                <View style={{ width: 100, alignItems: 'flex-end' }}>
-                  <TouchableOpacity
-                    style={styles.rowActionBtn}
-                    onPress={() => {
-                      // Remove from queue
-                      setQueue((prev) => prev.filter((q) => q.id !== item.id));
-                    }}
-                  >
-                    <Text style={styles.rowActionBtnText}>Remove</Text>
-                  </TouchableOpacity>
+                  {/* Status Badge */}
+                  <View style={{ flex: 1.5 }}>
+                    {item.status === 'completed' ? (
+                      <View style={styles.statusCompletedBadge}>
+                        <View style={styles.completedDot} />
+                        <Text style={styles.statusCompletedText}>
+                          Completed • {item.facesCount ?? 0} {item.facesCount === 1 ? 'Face' : 'Faces'} Indexed
+                        </Text>
+                      </View>
+                    ) : item.status === 'indexing' ? (
+                      <View style={styles.statusIndexingBadge}>
+                        <ActivityIndicator size="small" color="#b45309" />
+                        <Text style={styles.statusIndexingText}>Indexing Faces</Text>
+                      </View>
+                    ) : item.status === 'failed' ? (
+                      <View style={styles.statusFailedBadge}>
+                        <AdminIcon name="error" size={14} color={AdminColors.error} />
+                        <Text style={styles.statusFailedText} numberOfLines={1}>
+                          {item.speed || 'Upload Failed'}
+                        </Text>
+                      </View>
+                    ) : item.status === 'paused' ? (
+                      <View style={styles.statusPausedBadge}>
+                        <AdminIcon name="pause" size={14} color={AdminColors.secondary} />
+                        <Text style={styles.statusPausedText}>Paused</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.statusUploadingBadge}>
+                        <ActivityIndicator size="small" color={AdminColors.primary} />
+                        <Text style={styles.statusUploadingText}>Uploading</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Actions */}
+                  <View style={{ width: 80, alignItems: 'flex-end' }}>
+                    <TouchableOpacity
+                      style={styles.rowActionBtn}
+                      onPress={() => {
+                        setQueue((prev) => prev.filter((q) => q.id !== item.id));
+                      }}
+                    >
+                      <Text style={styles.rowActionBtnText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            );
-          })}
-        </View>
+              );
+            })}
+          </View>
+        )}
       </View>
     </AdminLayout>
   );

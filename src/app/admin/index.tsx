@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
   useWindowDimensions,
-  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -28,25 +28,24 @@ interface EventSummary {
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const isLargeScreen = width >= 1100;
-  const isTabletOrUp = width >= 768;
+  const isLargeScreen = width >= 1024;
 
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [loading, setLoading] = useState(true);
   const [totalPhotosCount, setTotalPhotosCount] = useState(0);
   const [totalAdminsCount, setTotalAdminsCount] = useState(1);
   const [totalAttendeesCount, setTotalAttendeesCount] = useState(0);
-  const [timeframe, setTimeframe] = useState('Last 30 Days');
-  const [viewBy, setViewBy] = useState<'day' | 'event'>('day');
 
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: dbEvents } = await supabase
+        setLoading(true);
+        const { data: dbEvents, error: eventsErr } = await supabase
           .from('events')
           .select('*, event_codes(code)')
           .order('created_at', { ascending: false });
 
-        if (dbEvents && dbEvents.length > 0) {
+        if (!eventsErr && dbEvents && dbEvents.length > 0) {
           const mapped: EventSummary[] = dbEvents.map((e: any) => ({
             id: e.id,
             title: e.title,
@@ -54,12 +53,19 @@ export default function AdminDashboardScreen() {
             location: e.location || 'Private Venue',
             event_code: e.event_codes?.[0]?.code || e.id.slice(0, 8).toUpperCase(),
             status: e.status || 'active',
-            cover_image_url: e.cover_url || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=400&q=80',
+            cover_image_url:
+              e.cover_url ||
+              'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=400&q=80',
             total_photos: e.total_photos || 0,
           }));
           setEvents(mapped);
-          const total = dbEvents.reduce((acc: number, curr: any) => acc + (curr.total_photos || 0), 0);
+          const total = dbEvents.reduce(
+            (acc: number, curr: any) => acc + (curr.total_photos || 0),
+            0
+          );
           setTotalPhotosCount(total);
+        } else {
+          setEvents([]);
         }
 
         const { count: adminsCount } = await supabase
@@ -73,114 +79,60 @@ export default function AdminDashboardScreen() {
           .select('*', { count: 'exact', head: true });
         if (membersCount !== null) setTotalAttendeesCount(membersCount);
       } catch (err) {
-        console.warn('Error loading admin telemetry:', err);
+        console.warn('Error loading admin overview data:', err);
+      } finally {
+        setLoading(false);
       }
     }
     loadData();
   }, []);
 
-  const displayEvents = events;
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'published':
-        return {
-          bg: '#ecfdf5',
-          text: '#047857',
-          dot: '#10b981',
-          label: 'Published',
-        };
-      case 'processing':
-        return {
-          bg: '#fffbeb',
-          text: '#b45309',
-          dot: '#f59e0b',
-          label: 'Processing 84%',
-        };
-      case 'completed':
-        return {
-          bg: AdminColors.surfaceContainer,
-          text: AdminColors.secondary,
-          dot: AdminColors.secondary,
-          label: 'Completed',
-        };
-      case 'draft':
-      default:
-        return {
-          bg: AdminColors.surfaceContainer,
-          text: AdminColors.secondary,
-          dot: AdminColors.outline,
-          label: 'Draft',
-        };
-    }
-  };
-
   return (
-    <AdminLayout breadcrumbs={['Console', 'Superadmin Overview']}>
-      {/* Dynamic Greeting & Telemetry Header */}
+    <AdminLayout breadcrumbs={['Console', 'Overview']}>
+      {/* Clean Studio Header Ribbon */}
       <View style={styles.headerRibbon}>
         <View style={styles.headerInfo}>
-          <View style={styles.telemetryTagRow}>
-            <View style={styles.telemetryPill}>
-              <Text style={styles.telemetryPillText}>
-                SUPERADMIN SYSTEM TELEMETRY
-              </Text>
-            </View>
-            <Text style={styles.clusterIdText}>Purusharth Production Mainframe</Text>
-          </View>
-          <Text style={styles.mainTitle}>Welcome back, Super Admin</Text>
+          <Text style={styles.mainTitle}>Studio Operations</Text>
           <Text style={styles.subTitle}>
-            Here&apos;s what&apos;s happening with your event photo platform across{' '}
-            {displayEvents.length} live productions.
+            Super Admin dashboard for Purusharth Studio. Overview of live productions, cloud archive, and team access.
           </Text>
         </View>
 
         {/* Action Toolbar */}
         <View style={styles.toolbarRow}>
           <TouchableOpacity
-            style={styles.timeframeButton}
-            onPress={() =>
-              setTimeframe(
-                timeframe === 'Last 30 Days' ? 'Last 7 Days' : 'Last 30 Days'
-              )
-            }
+            style={styles.uploadPhotosBtn}
+            onPress={() => router.push('/admin/uploads' as any)}
           >
-            <AdminIcon name="calendar_today" size={16} color={AdminColors.secondary} />
-            <Text style={styles.timeframeButtonText}>{timeframe}</Text>
-            <AdminIcon name="expand_more" size={16} color={AdminColors.outline} />
+            <AdminIcon name="cloud_upload" size={18} color="#ffffff" />
+            <Text style={styles.uploadPhotosBtnText}>Upload Photos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.createEventButton}
             onPress={() => router.push('/admin/events' as any)}
           >
-            <AdminIcon name="add" size={19} color="#ffffff" />
+            <AdminIcon name="add" size={18} color={AdminColors.primary} />
             <Text style={styles.createEventButtonText}>Create Event</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Row 1: 4 High-Density Operational KPI Cards */}
+      {/* KPI Cards Grid */}
       <View style={styles.kpiGrid}>
         {/* KPI 1: Events */}
         <View style={styles.kpiCard}>
           <View style={styles.kpiTop}>
             <View>
               <Text style={styles.kpiLabel}>TOTAL EVENTS</Text>
-              <Text style={styles.kpiValue}>
-                {events.length}
-              </Text>
+              <Text style={styles.kpiValue}>{events.length}</Text>
             </View>
             <View style={styles.kpiIconBox}>
               <AdminIcon name="calendar_month" size={22} color={AdminColors.primary} />
             </View>
           </View>
           <View style={styles.kpiBottom}>
-            <View style={styles.growthBadge}>
-              <View style={styles.growthDot} />
-              <Text style={styles.growthText}>Live Catalog</Text>
-            </View>
-            <Text style={styles.kpiSubMetric}>100% active</Text>
+            <Text style={styles.kpiSubMetric}>Active in catalog</Text>
           </View>
         </View>
 
@@ -198,19 +150,15 @@ export default function AdminDashboardScreen() {
             </View>
           </View>
           <View style={styles.kpiBottom}>
-            <View style={styles.growthBadge}>
-              <AdminIcon name="trending_up" size={14} color="#047857" />
-              <Text style={styles.growthText}>R2 Direct Storage</Text>
-            </View>
-            <Text style={styles.kpiSubMetric}>Cloudflare APAC</Text>
+            <Text style={styles.kpiSubMetric}>Cloudflare R2 archive</Text>
           </View>
         </View>
 
-        {/* KPI 3: Total Admins */}
+        {/* KPI 3: Studio Admins */}
         <View style={styles.kpiCard}>
           <View style={styles.kpiTop}>
             <View>
-              <Text style={styles.kpiLabel}>TOTAL ADMINS</Text>
+              <Text style={styles.kpiLabel}>STUDIO ADMINS</Text>
               <Text style={styles.kpiValue}>{totalAdminsCount}</Text>
             </View>
             <View style={styles.kpiIconBox}>
@@ -222,11 +170,7 @@ export default function AdminDashboardScreen() {
             </View>
           </View>
           <View style={styles.kpiBottom}>
-            <View style={styles.goldBadge}>
-              <View style={styles.goldDot} />
-              <Text style={styles.goldBadgeText}>{totalAdminsCount} active</Text>
-            </View>
-            <Text style={styles.kpiSubMetric}>Clearance granted</Text>
+            <Text style={styles.kpiSubMetric}>Authorized accounts</Text>
           </View>
         </View>
 
@@ -234,7 +178,7 @@ export default function AdminDashboardScreen() {
         <View style={styles.kpiCard}>
           <View style={styles.kpiTop}>
             <View>
-              <Text style={styles.kpiLabel}>TOTAL ATTENDEES</Text>
+              <Text style={styles.kpiLabel}>GUEST ENROLLMENTS</Text>
               <Text style={styles.kpiValue}>{totalAttendeesCount}</Text>
             </View>
             <View style={styles.kpiIconBox}>
@@ -242,372 +186,163 @@ export default function AdminDashboardScreen() {
             </View>
           </View>
           <View style={styles.kpiBottom}>
-            <View style={styles.growthBadge}>
-              <AdminIcon name="auto_awesome" size={14} color="#047857" />
-              <Text style={styles.growthText}>94.2% match rate</Text>
-            </View>
-            <Text style={styles.kpiSubMetric}>+328 this week</Text>
+            <Text style={styles.kpiSubMetric}>Passcodes redeemed</Text>
           </View>
         </View>
       </View>
 
-      {/* Row 2: Ingestion Chart & Recent Events */}
-      <View style={[styles.twoColRow, !isLargeScreen && styles.twoColRowStacked]}>
-        {/* Left: Ingestion Activity Monitor */}
-        <View style={[styles.panelCard, { flex: 7 }]}>
-          <View style={styles.panelHeader}>
-            <View>
-              <Text style={styles.panelTitle}>
-                Photo Upload & Ingestion Activity
-              </Text>
-              <Text style={styles.panelSubtitle}>
-                {totalPhotosCount.toLocaleString()} photos uploaded and indexed over the
-                current billing cycle
-              </Text>
-            </View>
-            <View style={styles.pillToggle}>
-              <TouchableOpacity
-                onPress={() => setViewBy('day')}
-                style={[
-                  styles.pillToggleBtn,
-                  viewBy === 'day' && styles.pillToggleBtnActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.pillToggleText,
-                    viewBy === 'day' && styles.pillToggleTextActive,
-                  ]}
-                >
-                  By Day
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setViewBy('event')}
-                style={[
-                  styles.pillToggleBtn,
-                  viewBy === 'event' && styles.pillToggleBtnActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.pillToggleText,
-                    viewBy === 'event' && styles.pillToggleTextActive,
-                  ]}
-                >
-                  By Event
-                </Text>
-              </TouchableOpacity>
+      {/* Main Section: Active Events Directory */}
+      <View style={styles.panelCard}>
+        <View style={styles.panelHeader}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={styles.panelTitle}>Active Events & Productions</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>{events.length} Live</Text>
             </View>
           </View>
-
-          {/* Telemetry Visual Activity Curve / Bars */}
-          <View style={styles.chartContainer}>
-            {/* Peak Callout Badge */}
-            <View style={styles.peakCallout}>
-              <View style={styles.peakPingDot} />
-              <Text style={styles.peakCalloutText}>
-                Annual Tech Summit:{' '}
-                <Text style={styles.peakCalloutBold}>4,820 photos</Text> (May 24)
-              </Text>
-            </View>
-
-            {/* Custom high-res bar chart visualization */}
-            <View style={styles.barsVisualWrapper}>
-              {[
-                { day: '01', height: 45, label: 'May 01' },
-                { day: '04', height: 62, label: '' },
-                { day: '08', height: 85, label: 'May 08' },
-                { day: '12', height: 50, label: '' },
-                { day: '15', height: 110, label: 'May 15' },
-                { day: '18', height: 90, label: '' },
-                { day: '21', height: 135, label: '' },
-                { day: '24', height: 180, label: 'May 24 (Peak)', peak: true },
-                { day: '27', height: 75, label: '' },
-                { day: '30', height: 95, label: 'May 30' },
-              ].map((bar, i) => (
-                <View key={i} style={styles.barColumn}>
-                  <View
-                    style={[
-                      styles.chartBar,
-                      { height: bar.height },
-                      bar.peak && styles.chartBarPeak,
-                    ]}
-                  />
-                  {bar.label ? (
-                    <Text
-                      style={[
-                        styles.axisText,
-                        bar.peak && styles.axisTextPeak,
-                      ]}
-                    >
-                      {bar.label}
-                    </Text>
-                  ) : (
-                    <Text style={styles.axisTextPlaceholder}>•</Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Pipeline Telemetry Sub-row */}
-          <View style={styles.pipelineSubRow}>
-            <View style={styles.pipelineStat}>
-              <Text style={styles.pipelineStatLabel}>FACE DETECTION</Text>
-              <Text style={styles.pipelineStatValue}>99.4%</Text>
-              <Text style={styles.pipelineStatMetaSuccess}>Model v4.8 deployed</Text>
-            </View>
-            <View style={styles.pipelineStat}>
-              <Text style={styles.pipelineStatLabel}>AVG INGEST LATENCY</Text>
-              <Text style={styles.pipelineStatValue}>1.2s</Text>
-              <Text style={styles.pipelineStatMeta}>per 24MB RAW</Text>
-            </View>
-            <View style={styles.pipelineStat}>
-              <Text style={styles.pipelineStatLabel}>ACTIVE WORKERS</Text>
-              <Text style={styles.pipelineStatValue}>28 Nodes</Text>
-              <Text style={styles.pipelineStatMetaSuccess}>100% capacity</Text>
-            </View>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/admin/events' as any)}
+            style={styles.viewAllBtn}
+          >
+            <Text style={styles.viewAllText}>Manage all events</Text>
+            <AdminIcon name="arrow_forward" size={16} color={AdminColors.primary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Right: Recent Events Registry */}
-        <View style={[styles.panelCard, { flex: 5 }]}>
-          <View style={styles.panelHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.panelTitle}>Recent Events</Text>
-              <View style={styles.liveTag}>
-                <Text style={styles.liveTagText}>12 Live</Text>
-              </View>
-            </View>
+        {loading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="small" color={AdminColors.primary} />
+            <Text style={styles.emptyText}>Loading events...</Text>
+          </View>
+        ) : events.length === 0 ? (
+          <View style={styles.emptyState}>
+            <AdminIcon name="event_busy" size={36} color={AdminColors.outline} />
+            <Text style={styles.emptyTitle}>No events registered yet</Text>
+            <Text style={styles.emptyText}>
+              Create your first production to start uploading photos and generating passcodes.
+            </Text>
             <TouchableOpacity
+              style={styles.createFirstBtn}
               onPress={() => router.push('/admin/events' as any)}
-              style={styles.viewAllBtn}
             >
-              <Text style={styles.viewAllText}>View all</Text>
-              <AdminIcon name="chevron_right" size={16} color={AdminColors.primary} />
+              <Text style={styles.createFirstBtnText}>Create First Event</Text>
             </TouchableOpacity>
           </View>
-
+        ) : (
           <View style={styles.eventsList}>
-            {displayEvents.map((evt) => {
-              const statusCfg = getStatusBadge(evt.status);
-              return (
-                <TouchableOpacity
-                  key={evt.id}
-                  style={styles.eventItemRow}
-                  onPress={() => router.push('/admin/events' as any)}
-                >
-                  <View style={styles.eventLeftGroup}>
-                    <Image
-                      source={{ uri: evt.cover_image_url }}
-                      style={styles.eventThumbnail}
-                    />
-                    <View style={styles.eventInfo}>
-                      <Text style={styles.eventItemTitle} numberOfLines={1}>
-                        {evt.title}
-                      </Text>
-                      <Text style={styles.eventItemMeta}>
-                        {evt.event_date} • {evt.total_photos?.toLocaleString() || 0}{' '}
-                        photos
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.statusPill,
-                      { backgroundColor: statusCfg.bg },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: statusCfg.dot },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.statusPillText,
-                        { color: statusCfg.text },
-                      ]}
-                    >
-                      {statusCfg.label}
+            {events.map((evt) => (
+              <View key={evt.id} style={styles.eventRow}>
+                {/* Event Cover and Info */}
+                <View style={styles.eventLeftGroup}>
+                  <Image
+                    source={{ uri: evt.cover_image_url }}
+                    style={styles.eventThumbnail}
+                  />
+                  <View style={styles.eventInfo}>
+                    <Text style={styles.eventItemTitle} numberOfLines={1}>
+                      {evt.title}
                     </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={styles.eventsFooter}>
-            <Text style={styles.eventsFooterText}>
-              Average Indexing: 4,120 photos/event
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/admin/uploads' as any)}>
-              <Text style={styles.batchOpLink}>Batch Uploads →</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      {/* Row 3: Storage Quota & Realtime Activity Stream */}
-      <View style={[styles.twoColRow, !isLargeScreen && styles.twoColRowStacked]}>
-        {/* Left: Storage Quota */}
-        <View style={[styles.panelCard, { flex: 6 }]}>
-          <View style={styles.panelHeader}>
-            <View>
-              <Text style={styles.panelTitle}>Storage & Processing Quota</Text>
-              <Text style={styles.panelSubtitle}>
-                Tier 2 Dedicated Cloud Storage Bucket (AWS S3 & Cloudflare R2)
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/admin/uploads' as any)}
-              style={styles.manageStorageBtn}
-            >
-              <AdminIcon name="tune" size={15} color={AdminColors.primary} />
-              <Text style={styles.manageStorageText}>Manage storage</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Numbers */}
-          <View style={styles.storageNumbersRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-              <Text style={styles.storageBigNumber}>428 GB</Text>
-              <Text style={styles.storageSubText}>used of 1 TB</Text>
-            </View>
-            <Text style={styles.storagePercentText}>42.8% Capacity</Text>
-          </View>
-
-          {/* Segmented Bar */}
-          <View style={styles.segmentedBar}>
-            <View
-              style={[
-                styles.segment,
-                { width: '80%', backgroundColor: AdminColors.primaryContainer },
-              ]}
-            />
-            <View
-              style={[
-                styles.segment,
-                { width: '15%', backgroundColor: AdminColors.tertiaryContainer },
-              ]}
-            />
-            <View
-              style={[
-                styles.segment,
-                { width: '5%', backgroundColor: AdminColors.secondary },
-              ]}
-            />
-          </View>
-
-          {/* Segment Breakdown */}
-          <View style={styles.storageBreakdownGrid}>
-            <View style={styles.storageSegmentItem}>
-              <View
-                style={[
-                  styles.segmentBoxDot,
-                  { backgroundColor: AdminColors.primaryContainer },
-                ]}
-              />
-              <View>
-                <Text style={styles.segmentName}>RAW & Masters</Text>
-                <Text style={styles.segmentSize}>342 GB</Text>
-                <Text style={styles.segmentShare}>80.0% of used</Text>
-              </View>
-            </View>
-            <View style={styles.storageSegmentItem}>
-              <View
-                style={[
-                  styles.segmentBoxDot,
-                  { backgroundColor: AdminColors.tertiaryContainer },
-                ]}
-              />
-              <View>
-                <Text style={styles.segmentName}>Web Derivatives</Text>
-                <Text style={styles.segmentSize}>64 GB</Text>
-                <Text style={styles.segmentShare}>15.0% of used</Text>
-              </View>
-            </View>
-            <View style={styles.storageSegmentItem}>
-              <View
-                style={[
-                  styles.segmentBoxDot,
-                  { backgroundColor: AdminColors.secondary },
-                ]}
-              />
-              <View>
-                <Text style={styles.segmentName}>AI Vectors</Text>
-                <Text style={styles.segmentSize}>22 GB</Text>
-                <Text style={styles.segmentShare}>5.0% of used</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Forecast Pill */}
-          <View style={styles.forecastPillBox}>
-            <AdminIcon name="verified" size={17} color="#059669" />
-            <Text style={styles.forecastText}>
-              Storage healthy. Projected capacity reached in{' '}
-              <Text style={{ fontWeight: '700', color: AdminColors.onSurface }}>
-                4.2 months
-              </Text>{' '}
-              at current growth rate.
-            </Text>
-          </View>
-        </View>
-
-        {/* Right: System Activity Log */}
-        <View style={[styles.panelCard, { flex: 6 }]}>
-          <View style={styles.panelHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.panelTitle}>System Activity Log</Text>
-              <View style={styles.activityPulseDot} />
-            </View>
-            <Text style={styles.workerActiveText}>Worker queue active</Text>
-          </View>
-
-          {/* Activity Feed */}
-          <View style={styles.activityTimeline}>
-            {events.length === 0 ? (
-              <View style={{ padding: 24, alignItems: 'center' }}>
-                <Text style={styles.activityMetaText}>Connecting to studio database...</Text>
-              </View>
-            ) : (
-              events.slice(0, 4).map((evt, i) => (
-                <View key={evt.id || i} style={styles.activityItem}>
-                  <View
-                    style={[
-                      styles.activityIconCircle,
-                      {
-                        backgroundColor:
-                          i % 2 === 0 ? AdminColors.primaryFixed : '#d1fae5',
-                      },
-                    ]}
-                  >
-                    <AdminIcon
-                      name={i % 2 === 0 ? 'cloud_upload' : 'verified'}
-                      size={15}
-                      color={i % 2 === 0 ? AdminColors.primary : '#065f46'}
-                    />
-                  </View>
-                  <View style={styles.activityTextContent}>
-                    <View style={styles.activityTitleRow}>
-                      <Text style={styles.activityEventTitle}>{evt.title}</Text>
-                      <Text style={styles.activityTime}>{evt.event_date || 'Active'}</Text>
+                    <View style={styles.eventMetaRow}>
+                      <Text style={styles.eventItemMeta}>
+                        {evt.event_date} • {evt.location}
+                      </Text>
+                      <View style={styles.codePill}>
+                        <AdminIcon name="vpn_key" size={12} color={AdminColors.secondary} />
+                        <Text style={styles.codePillText}>{evt.event_code}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.activityMetaText}>
-                      {evt.total_photos > 0
-                        ? `${evt.total_photos.toLocaleString()} photos synchronized via Cloudflare R2 • Location: ${evt.location}`
-                        : `Production vault active • Passcode: ${evt.event_code}`}
+                  </View>
+                </View>
+
+                {/* Event Photo Count & Status */}
+                <View style={styles.eventMiddleGroup}>
+                  <View style={styles.photosBadge}>
+                    <AdminIcon name="photo_library" size={14} color={AdminColors.primary} />
+                    <Text style={styles.photosBadgeText}>
+                      {evt.total_photos.toLocaleString()} Photos
                     </Text>
                   </View>
                 </View>
-              ))
-            )}
+
+                {/* Event Actions */}
+                <View style={styles.eventActionsGroup}>
+                  <TouchableOpacity
+                    style={styles.actionBtnUpload}
+                    onPress={() => router.push('/admin/uploads' as any)}
+                  >
+                    <AdminIcon name="cloud_upload" size={15} color="#ffffff" />
+                    <Text style={styles.actionBtnUploadText}>Upload</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.actionBtnGallery}
+                    onPress={() => router.push(`/event/${evt.id}` as any)}
+                  >
+                    <AdminIcon name="visibility" size={15} color={AdminColors.primary} />
+                    <Text style={styles.actionBtnGalleryText}>View Gallery</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
-        </View>
+        )}
+      </View>
+
+      {/* Quick Studio Operations Grid */}
+      <View style={[styles.quickToolsGrid, !isLargeScreen && styles.quickToolsGridStacked]}>
+        {/* Tool 1 */}
+        <TouchableOpacity
+          style={styles.quickToolCard}
+          onPress={() => router.push('/admin/uploads' as any)}
+        >
+          <View style={styles.quickToolIconBox}>
+            <AdminIcon name="cloud_upload" size={24} color={AdminColors.primary} />
+          </View>
+          <Text style={styles.quickToolTitle}>Photo Ingestion & R2 Sync</Text>
+          <Text style={styles.quickToolDesc}>
+            Upload high-resolution photographs directly to Cloudflare R2 bucket with automated facial indexing.
+          </Text>
+          <View style={styles.quickToolLinkRow}>
+            <Text style={styles.quickToolLinkText}>Go to Photo Uploads</Text>
+            <AdminIcon name="arrow_forward" size={15} color={AdminColors.primary} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Tool 2 */}
+        <TouchableOpacity
+          style={styles.quickToolCard}
+          onPress={() => router.push('/admin/events' as any)}
+        >
+          <View style={styles.quickToolIconBox}>
+            <AdminIcon name="event" size={24} color={AdminColors.primary} />
+          </View>
+          <Text style={styles.quickToolTitle}>Event Management</Text>
+          <Text style={styles.quickToolDesc}>
+            Create new event productions, configure VIP passcodes, and customize lookbook galleries.
+          </Text>
+          <View style={styles.quickToolLinkRow}>
+            <Text style={styles.quickToolLinkText}>Manage Events Directory</Text>
+            <AdminIcon name="arrow_forward" size={15} color={AdminColors.primary} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Tool 3 */}
+        <TouchableOpacity
+          style={styles.quickToolCard}
+          onPress={() => router.push('/admin/admins' as any)}
+        >
+          <View style={styles.quickToolIconBox}>
+            <AdminIcon name="badge" size={24} color={AdminColors.primary} />
+          </View>
+          <Text style={styles.quickToolTitle}>Team Clearances & Invites</Text>
+          <Text style={styles.quickToolDesc}>
+            Generate admin invite codes for second shooters and manage studio clearances.
+          </Text>
+          <View style={styles.quickToolLinkRow}>
+            <Text style={styles.quickToolLinkText}>Manage Admins</Text>
+            <AdminIcon name="arrow_forward" size={15} color={AdminColors.primary} />
+          </View>
+        </TouchableOpacity>
       </View>
     </AdminLayout>
   );
@@ -617,92 +352,68 @@ const styles = StyleSheet.create({
   headerRibbon: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   headerInfo: {
     flex: 1,
     minWidth: 280,
   },
-  telemetryTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  telemetryPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: AdminColors.secondaryContainer,
-  },
-  telemetryPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: AdminColors.onSecondaryFixed,
-    letterSpacing: 0.6,
-  },
-  clusterIdText: {
-    fontSize: 11,
-    fontFamily: AdminTypography.fontFamily.mono,
-    color: AdminColors.secondary,
-  },
   mainTitle: {
     fontSize: 26,
     fontWeight: '700',
     color: AdminColors.onSurface,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   subTitle: {
     fontSize: 13.5,
     color: AdminColors.secondary,
     marginTop: 4,
+    lineHeight: 20,
   },
   toolbarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  timeframeButton: {
-    height: 38,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: AdminColors.surfaceContainerLowest,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  timeframeButtonText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: AdminColors.onSurface,
-  },
-  createEventButton: {
-    height: 38,
-    paddingHorizontal: 16,
+  uploadPhotosBtn: {
+    height: 40,
+    paddingHorizontal: 18,
     borderRadius: 8,
     backgroundColor: AdminColors.primaryContainer,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     shadowColor: AdminColors.primaryContainer,
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
     elevation: 2,
   },
-  createEventButtonText: {
+  uploadPhotosBtnText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#ffffff',
   },
+  createEventButton: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: AdminColors.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: AdminColors.outlineVariant,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  createEventButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AdminColors.primary,
+  },
+
   // KPI Grid
   kpiGrid: {
     flexDirection: 'row',
@@ -712,14 +423,16 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     flex: 1,
-    minWidth: 220,
+    minWidth: 200,
     backgroundColor: AdminColors.surfaceContainerLowest,
-    padding: 18,
+    padding: 20,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(195, 198, 215, 0.3)',
     shadowColor: '#000',
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.02,
     shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 1,
   },
   kpiTop: {
@@ -740,8 +453,8 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kpiIconBox: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: 10,
     backgroundColor: AdminColors.surfaceContainer,
     alignItems: 'center',
@@ -752,272 +465,88 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(195, 198, 215, 0.2)',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  growthBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: '#ecfdf5',
-  },
-  growthDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#10b981',
-  },
-  growthText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#047857',
-  },
-  goldBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: AdminColors.primaryFixed,
-  },
-  goldDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: AdminColors.gold,
-  },
-  goldBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: AdminColors.gold,
   },
   kpiSubMetric: {
-    fontSize: 11,
-    fontFamily: AdminTypography.fontFamily.mono,
+    fontSize: 12,
     color: AdminColors.secondary,
   },
-  // Two Col Rows
-  twoColRow: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 24,
-  },
-  twoColRowStacked: {
-    flexDirection: 'column',
-  },
+
+  // Panel Card (Active Events Directory)
   panelCard: {
     backgroundColor: AdminColors.surfaceContainerLowest,
-    padding: 22,
+    padding: 24,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(195, 198, 215, 0.3)',
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.02,
     shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 1,
   },
   panelHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  panelTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: AdminColors.onSurface,
-  },
-  panelSubtitle: {
-    fontSize: 12,
-    color: AdminColors.secondary,
-    marginTop: 2,
-  },
-  pillToggle: {
-    flexDirection: 'row',
-    backgroundColor: AdminColors.surfaceContainer,
-    padding: 3,
-    borderRadius: 8,
-  },
-  pillToggleBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  pillToggleBtnActive: {
-    backgroundColor: AdminColors.surfaceContainerLowest,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  pillToggleText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: AdminColors.secondary,
-  },
-  pillToggleTextActive: {
-    fontWeight: '700',
-    color: AdminColors.onSurface,
-  },
-  // Chart
-  chartContainer: {
-    height: 220,
-    marginTop: 10,
-    position: 'relative',
-    justifyContent: 'flex-end',
-  },
-  peakCallout: {
-    position: 'absolute',
-    top: 0,
-    right: 40,
-    backgroundColor: AdminColors.inverseSurface,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    zIndex: 10,
-  },
-  peakPingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: AdminColors.primaryContainer,
-  },
-  peakCalloutText: {
-    fontSize: 11.5,
-    color: '#ffffff',
-  },
-  peakCalloutBold: {
-    fontWeight: '700',
-    color: AdminColors.primaryFixed,
-    fontFamily: AdminTypography.fontFamily.mono,
-  },
-  barsVisualWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    height: 170,
-    borderBottomWidth: 1,
-    borderBottomColor: AdminColors.surfaceVariant,
-    paddingBottom: 4,
-  },
-  barColumn: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  chartBar: {
-    width: 22,
-    backgroundColor: 'rgba(117, 90, 42, 0.22)',
-    borderRadius: 4,
-  },
-  chartBarPeak: {
-    backgroundColor: AdminColors.primaryContainer,
-  },
-  axisText: {
-    fontSize: 10,
-    fontFamily: AdminTypography.fontFamily.mono,
-    color: AdminColors.outline,
-    marginTop: 6,
-  },
-  axisTextPeak: {
-    color: AdminColors.primary,
-    fontWeight: '700',
-  },
-  axisTextPlaceholder: {
-    fontSize: 10,
-    color: 'transparent',
-    marginTop: 6,
-  },
-  pipelineSubRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: AdminColors.surfaceContainerLow,
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 20,
+    marginBottom: 20,
     flexWrap: 'wrap',
     gap: 12,
   },
-  pipelineStat: {
-    flex: 1,
-    minWidth: 100,
-  },
-  pipelineStatLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: AdminColors.secondary,
-    letterSpacing: 0.6,
-  },
-  pipelineStatValue: {
-    fontSize: 17,
+  panelTitle: {
+    fontSize: 18,
     fontWeight: '700',
     color: AdminColors.onSurface,
-    marginTop: 2,
   },
-  pipelineStatMetaSuccess: {
-    fontSize: 11,
-    color: '#059669',
-    marginTop: 1,
-  },
-  pipelineStatMeta: {
-    fontSize: 11,
-    color: AdminColors.secondary,
-    marginTop: 1,
-  },
-  // Events right card
-  liveTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  countBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 999,
     backgroundColor: AdminColors.surfaceContainer,
   },
-  liveTagText: {
-    fontSize: 11,
+  countBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: AdminColors.secondary,
   },
   viewAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 6,
   },
   viewAllText: {
-    fontSize: 12.5,
+    fontSize: 13,
     fontWeight: '600',
     color: AdminColors.primary,
   },
+
+  // Event Rows
   eventsList: {
-    gap: 8,
-    marginTop: 4,
+    gap: 12,
   },
-  eventItemRow: {
+  eventRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 10,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 12,
     backgroundColor: AdminColors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(195, 198, 215, 0.2)',
+    flexWrap: 'wrap',
+    gap: 14,
   },
   eventLeftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    minWidth: 0,
+    gap: 14,
+    flex: 2,
+    minWidth: 260,
   },
   eventThumbnail: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 52,
+    height: 52,
+    borderRadius: 10,
     backgroundColor: AdminColors.surfaceVariant,
   },
   eventInfo: {
@@ -1025,197 +554,167 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   eventItemTitle: {
-    fontSize: 13.5,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: AdminColors.onSurface,
   },
+  eventMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
   eventItemMeta: {
-    fontSize: 11.5,
-    color: AdminColors.secondary,
-    marginTop: 2,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  eventsFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(195, 198, 215, 0.25)',
-  },
-  eventsFooterText: {
     fontSize: 12,
     color: AdminColors.secondary,
   },
-  batchOpLink: {
-    fontSize: 12,
-    fontFamily: AdminTypography.fontFamily.mono,
-    fontWeight: '600',
-    color: AdminColors.primary,
-  },
-  // Storage Quota
-  manageStorageBtn: {
+  codePill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
     backgroundColor: AdminColors.surfaceContainer,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  manageStorageText: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: AdminColors.primary,
-  },
-  storageNumbersRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  storageBigNumber: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: AdminColors.onSurface,
-  },
-  storageSubText: {
-    fontSize: 13,
-    color: AdminColors.secondary,
-  },
-  storagePercentText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: AdminColors.primary,
-  },
-  segmentedBar: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: AdminColors.surfaceContainer,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    gap: 2,
-    marginBottom: 16,
-  },
-  segment: {
-    height: '100%',
-  },
-  storageBreakdownGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 16,
-  },
-  storageSegmentItem: {
-    flex: 1,
-    minWidth: 110,
-    backgroundColor: AdminColors.surfaceContainerLow,
-    padding: 10,
-    borderRadius: 8,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  segmentBoxDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    marginTop: 3,
-  },
-  segmentName: {
-    fontSize: 10.5,
-    color: AdminColors.secondary,
-  },
-  segmentSize: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: AdminColors.onSurface,
-    marginTop: 2,
-  },
-  segmentShare: {
-    fontSize: 10,
-    fontFamily: AdminTypography.fontFamily.mono,
-    color: AdminColors.outline,
-  },
-  forecastPillBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: AdminColors.surfaceContainerLow,
-    padding: 10,
-    borderRadius: 8,
-  },
-  forecastText: {
-    fontSize: 12,
-    color: AdminColors.secondary,
-    flex: 1,
-  },
-  // Activity Log
-  activityPulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10b981',
-  },
-  workerActiveText: {
-    fontSize: 11.5,
-    fontFamily: AdminTypography.fontFamily.mono,
-    color: AdminColors.secondary,
-  },
-  activityTimeline: {
-    gap: 14,
-    marginTop: 4,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  activityIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activityTextContent: {
-    flex: 1,
-  },
-  activityTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  activityEventTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: AdminColors.onSurface,
-  },
-  activityTime: {
+  codePillText: {
     fontSize: 11,
     fontFamily: AdminTypography.fontFamily.mono,
-    color: AdminColors.outline,
+    fontWeight: '700',
+    color: AdminColors.primary,
   },
-  activityMetaText: {
-    fontSize: 12,
+  eventMiddleGroup: {
+    flex: 1,
+    minWidth: 120,
+    alignItems: 'flex-start',
+  },
+  photosBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: AdminColors.surfaceContainerLow,
+  },
+  photosBadgeText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: AdminColors.onSurface,
+  },
+  eventActionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionBtnUpload: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: AdminColors.primaryContainer,
+  },
+  actionBtnUploadText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  actionBtnGallery: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: AdminColors.surfaceContainer,
+  },
+  actionBtnGalleryText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: AdminColors.primary,
+  },
+
+  // Empty State
+  emptyState: {
+    padding: 36,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: AdminColors.onSurface,
+    marginTop: 8,
+  },
+  emptyText: {
+    fontSize: 13,
     color: AdminColors.secondary,
-    marginTop: 2,
+    textAlign: 'center',
+    maxWidth: 400,
+  },
+  createFirstBtn: {
+    marginTop: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: AdminColors.primaryContainer,
+  },
+  createFirstBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+
+  // Quick Tools Grid
+  quickToolsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 20,
+  },
+  quickToolsGridStacked: {
+    flexDirection: 'column',
+  },
+  quickToolCard: {
+    flex: 1,
+    backgroundColor: AdminColors.surfaceContainerLowest,
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(195, 198, 215, 0.3)',
+    gap: 8,
+  },
+  quickToolIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: AdminColors.surfaceContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  quickToolTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: AdminColors.onSurface,
+  },
+  quickToolDesc: {
+    fontSize: 12.5,
+    color: AdminColors.secondary,
+    lineHeight: 18,
+    flex: 1,
+  },
+  quickToolLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  quickToolLinkText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: AdminColors.primary,
   },
 });
