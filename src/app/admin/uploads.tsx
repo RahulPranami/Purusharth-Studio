@@ -118,17 +118,19 @@ export default function AdminPhotoUploadsScreen() {
       const file = files[i];
       const targetId = newItems[i].id;
 
+      const eventFolder = selectedEventId || (events[0]?.id ? events[0].id : 'general');
+
       try {
         const uploadRes = await uploadToR2(
           file,
-          `events/${selectedEventId}/${Date.now()}_${file.name}`,
+          `events/${eventFolder}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`,
           (p) => {
             setQueue((prev) =>
               prev.map((item) =>
                 item.id === targetId
                   ? {
                       ...item,
-                      progress: p.percent,
+                      progress: typeof p === 'number' ? p : p.percent,
                       speed: `${(35 + Math.random() * 15).toFixed(1)} MB/s`,
                     }
                   : item
@@ -140,9 +142,9 @@ export default function AdminPhotoUploadsScreen() {
         // Store into Supabase `media` table and sync total_photos
         try {
           await recordMediaInDatabase({
-            eventId: selectedEventId.startsWith('default')
+            eventId: eventFolder.startsWith('default') || eventFolder === 'general'
               ? null
-              : selectedEventId,
+              : eventFolder,
             objectKey: uploadRes.key,
             url: uploadRes.url,
             sizeBytes: uploadRes.size,
@@ -170,10 +172,11 @@ export default function AdminPhotoUploadsScreen() {
               : item
           )
         );
-      } catch {
+      } catch (uploadErr: any) {
+        console.error('Upload failed for file:', file.name, uploadErr);
         setQueue((prev) =>
           prev.map((item) =>
-            item.id === targetId ? { ...item, status: 'failed' } : item
+            item.id === targetId ? { ...item, status: 'failed', speed: uploadErr.message || 'Failed' } : item
           )
         );
       }

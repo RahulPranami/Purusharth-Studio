@@ -371,10 +371,9 @@ const styles = StyleSheet.create({
     borderRightColor: 'rgba(195, 198, 215, 0.35)',
     zIndex: 50,
     height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
-    position: Platform.OS === 'web' ? ('fixed' as any) : 'relative',
-    left: 0,
+    position: Platform.OS === 'web' ? ('sticky' as any) : 'relative',
     top: 0,
-    bottom: 0,
+    flexShrink: 0,
   },
   sidebarInner: {
     flex: 1,
@@ -574,11 +573,12 @@ const styles = StyleSheet.create({
   // Main Area
   mainArea: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'column',
     backgroundColor: AdminColors.background,
   },
   mainAreaDesktop: {
-    marginLeft: 250,
+    minWidth: 0,
   },
   topHeader: {
     height: 60,

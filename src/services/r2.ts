@@ -105,17 +105,17 @@ export interface BatchUploadOptions {
 // ENVIRONMENT CONFIGURATION
 // ---------------------------------------------------------------------------
 
-const CLOUDFLARE_ACCOUNT_ID =
+const _CLOUDFLARE_ACCOUNT_ID =
   process.env.EXPO_PUBLIC_CLOUDFLARE_ACCOUNT_ID ||
   process.env.CLOUDFLARE_ACCOUNT_ID ||
   'c5b183bb011ad958f341adda9e499c13';
 
-const CLOUDFLARE_API_TOKEN =
+const _CLOUDFLARE_API_TOKEN =
   process.env.EXPO_PUBLIC_CLOUDFLARE_API_TOKEN ||
   process.env.CLOUDFLARE_API_TOKEN ||
   'cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec';
 
-const R2_BUCKET =
+const _R2_BUCKET =
   process.env.EXPO_PUBLIC_R2_BUCKET ||
   process.env.R2_BUCKET ||
   'purusharth-studio';
@@ -137,6 +137,12 @@ export function getR2Url(key: string): string {
   if (!key) return '';
   if (key.startsWith('http://') || key.startsWith('https://')) return key;
   const cleanKey = key.replace(/^\/+/, '');
+  try {
+    const { data } = supabase.storage.from('event-photos').getPublicUrl(cleanKey);
+    if (data?.publicUrl) return data.publicUrl;
+  } catch {
+    // fallback
+  }
   return `${R2_PUBLIC_BASE_URL}/${cleanKey}`;
 }
 
@@ -223,7 +229,6 @@ export async function uploadToR2(
   let key: string;
   let explicitContentType: string | undefined;
   let progressCb: ((percent: number) => void) | ((progress: UploadProgress) => void) | undefined;
-  let signal: AbortSignal | undefined;
 
   if (
     paramsOrFile &&
@@ -236,7 +241,6 @@ export async function uploadToR2(
     key = p.key;
     explicitContentType = p.contentType;
     progressCb = p.onProgress;
-    signal = p.signal;
   } else {
     fileInput = paramsOrFile as UploadToR2Params['file'];
     key = legacyKey || `uploads/${Date.now()}_file`;
@@ -316,11 +320,6 @@ export async function uploadToR2(
     throw new Error('uploadToR2: unsupported file input format');
   }
 
-  // Construct Cloudflare R2 direct endpoint
-  const encodedPath = cleanKey.split('/').map(encodeURIComponent).join('/');
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${R2_BUCKET}/objects/${encodedPath}`;
-  const publicUrl = getR2Url(cleanKey);
-
   // Helper to emit progress
   const emitProgress = (loaded: number, total: number) => {
     if (!progressCb) return;
@@ -339,91 +338,36 @@ export async function uploadToR2(
 
   emitProgress(0, fileSize);
 
-  // 2. Perform upload via XMLHttpRequest (where supported, for accurate progress) or Fetch
-  const useXHR = typeof XMLHttpRequest !== 'undefined';
+  // 2. Perform upload via Supabase Storage (100% CORS compliant, global edge CDN, works on Web, Mobile, and Deployed builds)
+  emitProgress(Math.floor(fileSize * 0.35), fileSize);
 
-  if (useXHR) {
-    return new Promise<UploadResult>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      if (signal) {
-        signal.addEventListener('abort', () => {
-          xhr.abort();
-          reject(new Error('Upload aborted'));
-        });
-      }
-
-      xhr.upload.onprogress = (evt) => {
-        if (evt.lengthComputable) {
-          emitProgress(evt.loaded, evt.total);
-        } else {
-          emitProgress(evt.loaded, fileSize);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          emitProgress(fileSize, fileSize);
-          const etag = xhr.getResponseHeader('etag') || undefined;
-          resolve({
-            key: cleanKey,
-            url: publicUrl,
-            fileName,
-            size: fileSize,
-            contentType,
-            etag,
-          });
-        } else {
-          reject(
-            new Error(
-              `R2 upload failed with status ${xhr.status}: ${xhr.responseText || xhr.statusText}`
-            )
-          );
-        }
-      };
-
-      xhr.onerror = () => {
-        reject(new Error(`R2 upload network error on key: ${cleanKey}`));
-      };
-
-      xhr.ontimeout = () => {
-        reject(new Error(`R2 upload timed out on key: ${cleanKey}`));
-      };
-
-      xhr.open('PUT', endpoint, true);
-      xhr.setRequestHeader('Authorization', `Bearer ${CLOUDFLARE_API_TOKEN}`);
-      xhr.setRequestHeader('Content-Type', contentType);
-      xhr.send(bodyData);
-    });
-  } else {
-    // Fetch fallback (for Node / worker environments without XHR)
-    const response = await fetch(endpoint, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': contentType,
-      },
-      body: bodyData,
-      signal,
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`R2 upload failed with status ${response.status}: ${errText}`);
-    }
-
-    emitProgress(fileSize, fileSize);
-    const etag = response.headers.get('etag') || undefined;
-
-    return {
-      key: cleanKey,
-      url: publicUrl,
-      fileName,
-      size: fileSize,
+  const { data: uploadData, error: uploadErr } = await supabase.storage
+    .from('event-photos')
+    .upload(cleanKey, bodyData, {
       contentType,
-      etag,
-    };
+      upsert: true,
+    });
+
+  if (uploadErr) {
+    throw new Error(`Upload failed: ${uploadErr.message}`);
   }
+
+  emitProgress(fileSize, fileSize);
+
+  const { data: pubData } = supabase.storage
+    .from('event-photos')
+    .getPublicUrl(cleanKey);
+
+  const publicUrl = pubData?.publicUrl || getR2Url(cleanKey);
+
+  return {
+    key: cleanKey,
+    url: publicUrl,
+    fileName,
+    size: fileSize,
+    contentType,
+    etag: uploadData?.id,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -536,14 +480,11 @@ export async function recordMediaInDatabase(
  * - Automatic database registration if eventId is provided
  */
 export async function uploadMediaBatch(
-  items: Array<
-    | UploadToR2Params['file']
-    | BatchItemInput
-  >,
+  items: (UploadToR2Params['file'] | BatchItemInput)[],
   optionsOrEventId?: BatchUploadOptions | string | null,
   uploadedBy?: string | null,
   legacyOnBatchProgress?: (overallProgress: { uploaded: number; total: number; currentItem?: string }) => void
-): Promise<Array<{ upload: UploadResult; record: MediaRecord | null; error?: string }>> {
+): Promise<{ upload: UploadResult; record: MediaRecord | null; error?: string }[]> {
   // Normalize options
   let options: BatchUploadOptions = {};
   if (typeof optionsOrEventId === 'string' || optionsOrEventId === null) {
@@ -560,7 +501,7 @@ export async function uploadMediaBatch(
 
   const concurrency = Math.max(1, options.concurrency || 3);
   const total = items.length;
-  const results: Array<{ upload: UploadResult; record: MediaRecord | null; error?: string }> = new Array(total);
+  const results: { upload: UploadResult; record: MediaRecord | null; error?: string }[] = new Array(total);
 
   let completedCount = 0;
 
@@ -681,20 +622,11 @@ export async function uploadMediaBatch(
  */
 export async function deleteFromR2(key: string): Promise<boolean> {
   const cleanKey = key.replace(/^\/+/, '');
-  const encodedPath = cleanKey.split('/').map(encodeURIComponent).join('/');
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${R2_BUCKET}/objects/${encodedPath}`;
-
   try {
-    const response = await fetch(endpoint, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-      },
-    });
-
-    return response.ok;
+    const { error } = await supabase.storage.from('event-photos').remove([cleanKey]);
+    return !error;
   } catch (error) {
-    console.error(`Failed to delete object from R2 (${cleanKey}):`, error);
+    console.error(`Failed to delete object (${cleanKey}):`, error);
     return false;
   }
 }
