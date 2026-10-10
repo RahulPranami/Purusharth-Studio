@@ -60,6 +60,11 @@ jobs:
       - name: Export Web Bundle
         run: npx expo export --platform web
 
+      - name: Prepare GitHub Pages SPA and Jekyll Bypass
+        run: |
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
+
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:

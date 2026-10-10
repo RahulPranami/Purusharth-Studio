@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/utils/supabase';
+import { WebAuthPortal } from '@/components/web/WebAuthPortal';
 
 const UNLOCKED_EVENTS_KEY = '@purusharth_unlocked_events';
 
@@ -43,7 +44,7 @@ interface EventRecord {
 
 export default function ClientHomeScreen() {
   const router = useRouter();
-  const { user, profile, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated, loading, signOut } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
@@ -66,6 +67,13 @@ export default function ClientHomeScreen() {
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
+
+  // Web check: if authenticated as super_admin or admin on Web, route straight to /admin
+  useEffect(() => {
+    if (Platform.OS === 'web' && isAuthenticated && (profile?.role === 'super_admin' || profile?.role === 'admin')) {
+      router.replace('/admin' as any);
+    }
+  }, [isAuthenticated, profile?.role]);
 
   // Load unlocked passes (AsyncStorage + Supabase) and live events
   useEffect(() => {
@@ -181,6 +189,22 @@ export default function ClientHomeScreen() {
     }
   };
 
+  // Web requirement: Always ask for login on Web if not authenticated!
+  if (Platform.OS === 'web') {
+    if (loading) {
+      return (
+        <View style={styles.webLoadingContainer}>
+          <ActivityIndicator size="large" color="#755A2A" />
+          <Text style={styles.webLoadingText}>PURUSHARTH STUDIO • SECURE VAULT</Text>
+        </View>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return <WebAuthPortal />;
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       {/* Top Luxury Navigation Header */}
@@ -195,20 +219,30 @@ export default function ClientHomeScreen() {
 
         <View style={styles.navActions}>
           {isAuthenticated ? (
-            <TouchableOpacity
-              style={styles.profileBtn}
-              activeOpacity={0.8}
-              onPress={() => router.push('/profile' as any)}>
-              {profile?.selfie_url ? (
-                <Image source={{ uri: profile.selfie_url }} style={styles.avatarImg} />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarFallbackText}>
-                    {(profile?.display_name || user?.email || 'U')[0].toUpperCase()}
-                  </Text>
-                </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity
+                style={styles.profileBtn}
+                activeOpacity={0.8}
+                onPress={() => router.push('/profile' as any)}>
+                {profile?.selfie_url ? (
+                  <Image source={{ uri: profile.selfie_url }} style={styles.avatarImg} />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarFallbackText}>
+                      {(profile?.display_name || user?.email || 'U')[0].toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {Platform.OS === 'web' && (
+                <TouchableOpacity
+                  style={styles.webSignOutBtn}
+                  onPress={() => signOut()}
+                  activeOpacity={0.7}>
+                  <Text style={styles.webSignOutText}>Sign Out</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity
               style={styles.signInBtn}
@@ -955,5 +989,32 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     fontSize: 13,
     fontWeight: '600',
+  },
+  webLoadingContainer: {
+    flex: 1,
+    minHeight: '100%',
+    backgroundColor: '#FAF8F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  webLoadingText: {
+    marginTop: 16,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: '#755A2A',
+  },
+  webSignOutBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: '#F5F2EC',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E7E0D6',
+  },
+  webSignOutText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#78716C',
   },
 });

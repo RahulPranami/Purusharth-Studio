@@ -130,7 +130,7 @@ export default function AdminDashboardScreen() {
           </View>
           <Text style={styles.mainTitle}>Welcome back, Super Admin</Text>
           <Text style={styles.subTitle}>
-            Here's what's happening with your event photo platform across{' '}
+            Here&apos;s what&apos;s happening with your event photo platform across{' '}
             {displayEvents.length} live productions.
           </Text>
         </View>

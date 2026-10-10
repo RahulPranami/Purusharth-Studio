@@ -1,0 +1,26 @@
+name: Build and Deploy (Web & Android APK)
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch: {}
+
+concurrency:
+  cancel_in_progress: true
+  group: ${{ workflow.filename }}-${{ github.ref }}
+
+jobs:
+  deploy_web:
+    name: Deploy Web Application
+    type: deploy
+    params:
+      prod: true
+
+  build_android:
+    name: Build Android APK
+    type: build
+    params:
+      platform: android
+      profile: preview

@@ -40,7 +40,13 @@ export function AdminLayout({
     : Math.max(insets.top, 12);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAuthenticated, loading } = useAuth();
+
+  React.useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/admin/login' as any);
+    }
+  }, [loading, isAuthenticated]);
 
   const navItems = [
     {

@@ -11,11 +11,27 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jddzvxctbrqtpodscnnp.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF",
+        "EXPO_PUBLIC_R2_BUCKET": "purusharth-studio",
+        "EXPO_PUBLIC_R2_PUBLIC_URL": "https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev",
+        "CLOUDFLARE_ACCOUNT_ID": "c5b183bb011ad958f341adda9e499c13",
+        "CLOUDFLARE_API_TOKEN": "cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec"
       }
     },
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://jddzvxctbrqtpodscnnp.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_KEY": "sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF",
+        "EXPO_PUBLIC_R2_BUCKET": "purusharth-studio",
+        "EXPO_PUBLIC_R2_PUBLIC_URL": "https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev",
+        "CLOUDFLARE_ACCOUNT_ID": "c5b183bb011ad958f341adda9e499c13",
+        "CLOUDFLARE_API_TOKEN": "cfoat_mw7lDAgbvG_7F2OcmsxW-odtTfLhijyVDvotVom4Q_c.Qf98-lLI-cBBEX5vnnQmkkaS7kCf8iHxFQKUU_muIec"
       }
     }
   },

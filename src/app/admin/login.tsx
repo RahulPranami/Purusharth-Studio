@@ -18,8 +18,8 @@ export default function AdminLoginScreen() {
   const router = useRouter();
   const { signInWithPassword } = useAuth();
 
-  const [email, setEmail] = useState('admin@purusharthstudio.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('rahulpranami101@gmail.com');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [totpCode, setTotpCode] = useState('');
@@ -28,25 +28,29 @@ export default function AdminLoginScreen() {
   const [statusMessage, setStatusMessage] = useState('');
 
   const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      setStatusMessage('Please enter both your identifier and password.');
+      return;
+    }
+
     setIsSubmitting(true);
     setStatusMessage('Authenticating Director Clearance...');
 
     try {
-      // Try actual Supabase password login
       const res = await signInWithPassword(email, password);
-      if (!res.success) {
-        // Allow director override/demo pass through
+      if (res.success) {
+        setStatusMessage('Access Granted. Redirecting...');
+        setTimeout(() => {
+          router.replace('/admin' as any);
+        }, 400);
+      } else {
+        setIsSubmitting(false);
+        setStatusMessage(res.message || 'Invalid credentials. Please verify your credentials.');
       }
-    } catch {
-      // ignore
+    } catch (e: any) {
+      setIsSubmitting(false);
+      setStatusMessage(e.message || 'Authentication error.');
     }
-
-    setTimeout(() => {
-      setStatusMessage('Access Granted. Redirecting...');
-      setTimeout(() => {
-        router.replace('/admin' as any);
-      }, 500);
-    }, 900);
   };
 
   return (
