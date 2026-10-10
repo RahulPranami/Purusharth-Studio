@@ -23,9 +23,17 @@ const storage = {
   },
 };
 
+const SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  'https://jddzvxctbrqtpodscnnp.supabase.co';
+
+const SUPABASE_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_KEY ||
+  'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF';
+
 export const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_KEY!,
+  SUPABASE_URL,
+  SUPABASE_KEY,
   {
     auth: {
       storage,
