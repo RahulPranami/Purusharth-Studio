@@ -41,6 +41,7 @@ jobs:
 
       - name: Export Web Bundle
         env:
+          EXPO_BASE_URL: '/Purusharth-Studio'
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL || 'https://jddzvxctbrqtpodscnnp.supabase.co' }}
           EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY || 'sb_publishable_iWd1umAYMTfmlcuA57s-KA__NBesjCF' }}
           EXPO_PUBLIC_R2_BUCKET: ${{ secrets.EXPO_PUBLIC_R2_BUCKET || 'purusharth-studio' }}
@@ -64,6 +65,15 @@ jobs:
           name: Purusharth-Studio-Web-Bundle
           path: dist
           retention-days: 14
+
+      - name: Write Web Deployment Summary
+        run: |
+          echo "## 🌐 Web Deployment Live!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Live Web Application** | [https://rahulpranami.github.io/Purusharth-Studio/](https://rahulpranami.github.io/Purusharth-Studio/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Super Admin Operations Console** | [https://rahulpranami.github.io/Purusharth-Studio/admin](https://rahulpranami.github.io/Purusharth-Studio/admin) |" >> $GITHUB_STEP_SUMMARY
 
   # ==========================================
   # 2. BUILD STANDALONE ANDROID APK
@@ -112,7 +122,7 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/*.gradle*') }}
           restore-keys: |
-            ${ runner.os }}-gradle-
+            ${{ runner.os }}-gradle-
 
       - name: Build Android APK via Gradle
         working-directory: android
@@ -143,11 +153,21 @@ jobs:
           body: |
             ### 📸 Purusharth Studio — Automated Production Build
             
-            - **Android APK**: Download the `Purusharth-Studio.apk` asset below and install it directly on any Android device.
-            - **Web Interface**: Deployed live on GitHub Pages.
+            - **Android APK**: Download [`Purusharth-Studio.apk`](https://github.com/RahulPranami/Purusharth-Studio/releases/download/latest/Purusharth-Studio.apk) below and install directly on any Android device.
+            - **Web Application URL**: [https://rahulpranami.github.io/Purusharth-Studio/](https://rahulpranami.github.io/Purusharth-Studio/)
+            - **Super Admin Console**: [https://rahulpranami.github.io/Purusharth-Studio/admin](https://rahulpranami.github.io/Purusharth-Studio/admin)
             - **Commit**: `${{ github.sha }}`
           files: build-output/Purusharth-Studio.apk
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write Android Build Summary
+        run: |
+          echo "## 📱 Android APK Ready!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | Download Link |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Direct APK Download** | [Purusharth-Studio.apk](https://github.com/RahulPranami/Purusharth-Studio/releases/download/latest/Purusharth-Studio.apk) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Latest Release Page** | [GitHub Releases](https://github.com/RahulPranami/Purusharth-Studio/releases/tag/latest) |" >> $GITHUB_STEP_SUMMARY

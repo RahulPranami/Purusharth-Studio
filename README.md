@@ -4,6 +4,14 @@
 > Luxury Event Photography & Cinematography Platform  
 > Unified Web & Mobile Application built with React Native (Expo SDK 57), Supabase, and Cloudflare R2.
 
+[![Build & Deploy](https://github.com/RahulPranami/Purusharth-Studio/actions/workflows/deploy.yml/badge.svg)](https://github.com/RahulPranami/Purusharth-Studio/actions/workflows/deploy.yml)
+
+### 🚀 Instant Access & Downloads
+- 🌐 **Live Web Application**: [https://rahulpranami.github.io/Purusharth-Studio/](https://rahulpranami.github.io/Purusharth-Studio/)
+- 📱 **Download Android APK**: [Purusharth-Studio.apk (Latest Build)](https://github.com/RahulPranami/Purusharth-Studio/releases/download/latest/Purusharth-Studio.apk)
+- 📦 **All Releases**: [GitHub Releases Page](https://github.com/RahulPranami/Purusharth-Studio/releases/tag/latest)
+- ⚡ **Super Admin Console (Web)**: [https://rahulpranami.github.io/Purusharth-Studio/admin](https://rahulpranami.github.io/Purusharth-Studio/admin)
+
 ---
 
 ## 🌟 Key Features
