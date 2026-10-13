@@ -32,13 +32,6 @@ interface EventPass {
   cover_url?: string;
 }
 
-interface PublicCollection {
-  id: string;
-  title: string;
-  description: string | null;
-  cover_url: string | null;
-}
-
 export default function ClientHomeScreen() {
   const router = useRouter();
   const { user, profile, isAuthenticated, loading, signOut } = useAuth();
@@ -55,7 +48,6 @@ export default function ClientHomeScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [activePasses, setActivePasses] = useState<EventPass[]>([]);
-  const [publicCollections, setPublicCollections] = useState<PublicCollection[]>([]);
 
   const [previewVideoOpen, setPreviewVideoOpen] = useState(false);
   const [activeVideoTitle, setActiveVideoTitle] = useState('');
@@ -72,7 +64,7 @@ export default function ClientHomeScreen() {
     }
   }, [isAuthenticated, profile?.role]);
 
-  // Load unlocked passes (AsyncStorage + Supabase) and public collections
+  // Load unlocked passes (AsyncStorage + Supabase)
   useEffect(() => {
     async function loadData() {
       try {
@@ -104,17 +96,6 @@ export default function ClientHomeScreen() {
         }
 
         setActivePasses(passes);
-
-        // 3. Load public showcase collections from Supabase
-        const { data: collectionsData } = await supabase
-          .from('collections')
-          .select('id, title, description, cover_url')
-          .eq('visibility', 'public')
-          .order('published_at', { ascending: false });
-
-        if (collectionsData && collectionsData.length > 0) {
-          setPublicCollections(collectionsData);
-        }
       } catch (e) {
         console.warn('Error loading initial data:', e);
       }
@@ -425,61 +406,6 @@ export default function ClientHomeScreen() {
             </View>
           </>
         )}
-
-        {/* SECTION 3: Public Studio Showcase Collections */}
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.eyebrow}>STUDIO SHOWCASE</Text>
-            <Text style={styles.sectionHeading}>Curated Portfolio Lookbooks</Text>
-          </View>
-          <View style={styles.releaseBadge}>
-            <Text style={styles.releaseBadgeText}>OFFICIAL</Text>
-          </View>
-        </View>
-
-        <View style={styles.collectionsGrid}>
-          {publicCollections.map((item) => (
-            <View key={item.id} style={styles.collectionCard}>
-              <View style={styles.imageBox}>
-                {item.cover_url ? (
-                  <Image source={{ uri: item.cover_url }} style={styles.collectionImg} />
-                ) : (
-                  <View style={styles.placeholderCover}>
-                    <Text style={styles.placeholderCoverText}>{item.title}</Text>
-                  </View>
-                )}
-                <View style={styles.gradientOverlay} />
-                <View style={styles.tagBadge}>
-                  <Text style={styles.tagBadgeText}>Editorial Showcase</Text>
-                </View>
-                <View style={styles.cardHeaderOverlay}>
-                  <Text style={styles.cardSubText}>Official Lookbook</Text>
-                  <Text style={styles.cardTitleText}>{item.title}</Text>
-                </View>
-              </View>
-
-              <View style={styles.cardFooter}>
-                {item.description ? (
-                  <Text style={[styles.vaultHint, { marginBottom: 12 }]} numberOfLines={2}>
-                    {item.description}
-                  </Text>
-                ) : null}
-
-                <View style={styles.actionRow}>
-                  <TouchableOpacity
-                    style={[styles.watchPreviewBtn, { flex: 1, backgroundColor: '#1B1C19' }]}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      setActiveVideoTitle(item.title);
-                      setPreviewVideoOpen(true);
-                    }}>
-                    <Text style={[styles.watchPreviewText, { color: '#C5A059' }]}>▶ WATCH CINEMA TEASER</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
       </ScrollView>
 
       {/* Cinematic Film Preview Modal */}

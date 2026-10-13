@@ -92,30 +92,18 @@ export function AdminLayout({
       name: 'Events',
       path: '/admin/events',
       icon: 'calendar_month',
-      badge: '12',
+      badge: null,
     },
     {
       name: 'Photo Uploads',
       path: '/admin/uploads',
       icon: 'cloud_upload',
-      badge: 'Active',
+      badge: null,
     },
     {
       name: 'Admins',
       path: '/admin/admins',
       icon: 'admin_panel_settings',
-      badge: null,
-    },
-    {
-      name: 'Collections',
-      path: '/admin/events',
-      icon: 'photo_library',
-      badge: null,
-    },
-    {
-      name: 'Settings',
-      path: '/admin',
-      icon: 'settings',
       badge: null,
     },
   ];
