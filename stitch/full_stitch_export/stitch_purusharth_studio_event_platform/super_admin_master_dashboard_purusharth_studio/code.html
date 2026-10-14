@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&amp;family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary":"#ffffff","on-tertiary-fixed":"#1c1b1a","on-primary-container":"#858383","primary-container":"#1c1b1b","on-primary-fixed":"#1c1b1b","inverse-primary":"#c8c6c5","on-error-container":"#93000a","outline-variant":"#c4c7c7","surface":"#fbf9f4","on-tertiary":"#ffffff","on-secondary-container":"#775d2d","inverse-surface":"#30312e","secondary-fixed-dim":"#e5c188","on-primary-fixed-variant":"#474746","primary-fixed":"#e5e2e1","tertiary-fixed-dim":"#cac6c4","on-surface":"#1b1c19","surface-container-lowest":"#ffffff","on-secondary-fixed-variant":"#5b4315","on-tertiary-container":"#868382","outline":"#747878","tertiary":"#000000","on-background":"#1b1c19","on-tertiary-fixed-variant":"#484645","on-secondary-fixed":"#271900","surface-container-high":"#eae8e3","error-container":"#ffdad6","on-surface-variant":"#444748","on-error":"#ffffff","tertiary-container":"#1c1b1a","background":"#fbf9f4","surface-tint":"#5f5e5e","primary":"#000000","primary-fixed-dim":"#c8c6c5","surface-variant":"#e4e2dd","surface-container":"#f0eee9","surface-dim":"#dbdad5","surface-container-highest":"#e4e2dd","on-primary":"#ffffff","surface-container-low":"#f5f3ee","secondary-fixed":"#ffdea9","secondary":"#755a2a","tertiary-fixed":"#e6e2df","surface-bright":"#fbf9f4","secondary-container":"#fcd89c","inverse-on-surface":"#f2f1ec","error":"#ba1a1a"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"gutter-mobile":"1rem","space-xl":"2.5rem","space-md":"1rem","margin-mobile":"1.25rem","gutter":"1.5rem","space-lg":"1.5rem","space-xs":"0.25rem","margin":"3rem","space-sm":"0.5rem"},fontFamily:{"display-xl":["Bodoni Moda"],"display-xl-mobile":["Bodoni Moda"],"headline-sm":["Bodoni Moda"],"headline-lg":["Bodoni Moda"],"body-md":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-md":["Bodoni Moda"],"body-sm":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Bodoni Moda"],"label-caps":["Plus Jakarta Sans"]},fontSize:{"display-xl":["56px",{lineHeight:"64px",letterSpacing:"-0.02em",fontWeight:"400"}],"display-xl-mobile":["38px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"400"}],"headline-sm":["20px",{lineHeight:"28px",fontWeight:"500"}],"headline-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.01em",fontWeight:"400"}],"body-md":["15px",{lineHeight:"24px",fontWeight:"400"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.04em",fontWeight:"600"}],"headline-md":["26px",{lineHeight:"34px",fontWeight:"500"}],"body-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.06em",fontWeight:"500"}],"headline-lg-mobile":["28px",{lineHeight:"34px",fontWeight:"400"}],"label-caps":["11px",{lineHeight:"14px",letterSpacing:"0.12em",fontWeight:"700"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between py-6"><div class="flex flex-col gap-8"><div class="px-6 flex items-center gap-3"><img alt="Purusharth Studio Logo.jpg" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1W1YFqwdLN2390QvGaSdCZmAwFGB3LmA-zh7yHQl3VMlImNPFm91nmwRJr1BCI5wTSeoroOXIhSUdH94IAgdIWfQ1WywDq1SGPucRLaM7ipYX4waAyT_RKIvhvmDlxALctnQ9BiNZciVq3Apv1Yz8AVUaJSKEICI1O0ypICs9NOUWCAwMMyyxkB3JpxghJnmZjL7Afimrw24cLOtfj0io8msnPGcr_eyZsiUyS8zOwoth41MrXd95ap3Bd376Hrc1_1KFJcXu8nLA"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface">Purusharth</span><span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">Super Admin</span></div></div><nav class="px-4 flex flex-col gap-1.5" data-active-classes="bg-primary text-on-primary font-label-lg rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.08)]"><a aria-current="page" class="flex items-center gap-3 px-4 py-3 transition-colors bg-primary text-on-primary font-label-lg rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.08)]" data-path="overview" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Overview</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="production-events" href="#"><span class="material-symbols-outlined text-[20px]">camera_indoor</span><span>Production &amp; Events</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="gallery-ingest" href="#"><span class="material-symbols-outlined text-[20px]">photo_library</span><span>Gallery &amp; Ingest</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="clients-contracts" href="#"><span class="material-symbols-outlined text-[20px]">supervised_user_circle</span><span>Clients &amp; Retainers</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="crew-dispatch" href="#"><span class="material-symbols-outlined text-[20px]">badge</span><span>Crew &amp; Run of Show</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="financial-ledger" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span>Financial Ledger</span></a><a class="flex items-center gap-3 px-4 py-3 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="system-settings" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span>Studio Settings</span></a></nav></div><div class="px-4 flex flex-col gap-3"><div class="p-4 rounded-xl bg-surface-container flex flex-col gap-2"><div class="flex items-center justify-between"><span class="font-label-caps text-label-caps uppercase text-secondary">Archival Vault</span><span class="font-label-md text-label-md text-on-surface">82% Full</span></div><div class="w-full bg-surface-dim h-1.5 rounded-full overflow-hidden"><div class="bg-secondary h-full rounded-full" style="width: 82%"></div></div><span class="font-body-sm text-body-sm text-on-surface-variant">41.8 TB of 50 TB Raw Ingest</span></div><div class="flex items-center gap-3 px-4 py-2"><div class="w-2 h-2 rounded-full bg-secondary"></div><span class="font-label-md text-label-md text-on-surface-variant">Studio Master Node Live</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-8"><div class="flex items-center gap-4"><img alt="Purusharth Studio Logo.jpg" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1W1YFqwdLN2390QvGaSdCZmAwFGB3LmA-zh7yHQl3VMlImNPFm91nmwRJr1BCI5wTSeoroOXIhSUdH94IAgdIWfQ1WywDq1SGPucRLaM7ipYX4waAyT_RKIvhvmDlxALctnQ9BiNZciVq3Apv1Yz8AVUaJSKEICI1O0ypICs9NOUWCAwMMyyxkB3JpxghJnmZjL7Afimrw24cLOtfj0io8msnPGcr_eyZsiUyS8zOwoth41MrXd95ap3Bd376Hrc1_1KFJcXu8nLA"/><div class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-xl text-on-surface-variant w-80 shadow-[0_1px_4px_rgba(0,0,0,0.02)]"><span class="material-symbols-outlined text-[18px]">search</span><input class="bg-transparent border-0 outline-none text-body-sm font-body-sm text-on-surface w-full placeholder:text-on-surface-variant" placeholder="Search archives, shoots, call sheets..." type="text"/></div></div><div class="flex items-center gap-5"><button class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[18px] text-secondary">workspace_premium</span><span class="font-label-md text-label-md uppercase tracking-wider text-secondary">Executive Tier</span></button><button class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[20px]">schedule</span></button><div class="flex items-center gap-3 pl-3 border-l-0"><div class="text-right"><div class="font-label-lg text-label-lg text-on-surface">Aaditya Purusharth</div><div class="font-label-md text-label-md text-on-surface-variant">Managing Director</div></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 px-8 bg-surface min-h-screen"><div class="flex flex-col w-full pb-20 space-y-12">
+<!-- Overview Hub & Quick Actions Bar -->
+<section class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-4">
+<div class="flex flex-col gap-2 max-w-2xl">
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest bg-secondary-container/40 px-2.5 py-1 rounded">Ops Directive 09 // Live</span>
+<span class="text-on-surface-variant font-label-md text-label-md">Server Node: IN-MUM-01 (Encrypted)</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Super Admin Command Hub</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Central control for high-throughput multi-camera ingestion, cryptographic client access tokens, and distributed post-production team privileges.</p>
+</div>
+<!-- Quick Action Launchers -->
+<div class="flex flex-wrap items-center gap-3">
+<button class="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg tracking-wider transition-all duration-200 hover:bg-surface-container-highest hover:text-on-surface shadow-sm" onclick="toggleModal('modal-create-event')">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Create Event</span>
+</button>
+<button class="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container transition-all" onclick="toggleModal('modal-create-admin')">
+<span class="material-symbols-outlined text-[18px] text-secondary">vpn_key</span>
+<span>Generate Admin Code</span>
+</button>
+<a class="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-secondary-container/60 text-on-secondary-container font-label-lg text-label-lg hover:bg-secondary-container transition-all shadow-sm" href="#bulk-ingest">
+<span class="material-symbols-outlined text-[18px]">cloud_upload</span>
+<span>Bulk Media Ingest</span>
+</a>
+</div>
+</section>
+<!-- High-Level Metric Tiles (Editorial Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Active Productions</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">movie_filter</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-light">14</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-1">
+<span class="text-secondary font-semibold">+3</span> scheduled this weekend
+        </div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">AI Face-Indexed Assets</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">face_retouching_natural</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-light">284,910</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 99.4% cluster fidelity
+        </div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Dispatched Crew</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">badge</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-light">38</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-1">
+<span>11 Active Lead Operators</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Archival Pipeline</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">dns</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface font-light">41.8 <span class="font-label-lg text-label-lg text-on-surface-variant">TB</span></div>
+<div class="w-full bg-surface-container-high h-1 rounded-full overflow-hidden mt-2">
+<div class="bg-secondary h-full rounded-full" style="width: 83%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 1 & 2 Mosaic: Event Management + Admin Team Governance -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Section 1: Active Events Management (Col 7) -->
+<div class="lg:col-span-7 flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-headline-sm text-headline-sm text-on-surface">Event Rosters &amp; Keys</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-2.5 py-0.5 rounded-full text-on-surface-variant">Live Productions</span>
+</div>
+<div class="relative w-64">
+<input class="w-full bg-surface-container-lowest px-3.5 py-1.5 rounded-xl text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant outline-none shadow-sm focus:ring-1 focus:ring-secondary" placeholder="Filter moniker or VIP..." type="text"/>
+<span class="material-symbols-outlined text-[16px] absolute right-3 top-2.5 text-on-surface-variant">tune</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Event Card 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-xl bg-surface-container flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Opulent royal palace wedding in Udaipur at twilight with warm lanterns reflecting off Lake Pichola, editorial cinematic shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4fJCKovRnEtCFrj9j4TgWkUdjrduv9xTxC_HjIwp1AGHC7aeY-yvpjo9-7qYOtv7tTexzmH0g2vjyAAD6TXayaJ-kL0KXvg7Bq4_6Z-J4w0Z43oc4TzF2G4pS3u7acrKuPJmTbOA_ZehPMa-tcVttM1Y6txfPrtW0a6Y4B-DKrXblka-2OsBOk4FuEAsPHuMVqweMidloisEWyBcdidxJ5HUhQbun-_Qh7FyV9_L9wpTk8_uNE5s88A"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">The Royal Udaipur Wedding</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-secondary">ACTIVE INGEST</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Dec 18–21 • Client: Yuvraj &amp; Gayatri Singh</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-caps text-label-caps text-on-surface bg-surface-container-high px-2 py-0.5 rounded tracking-widest font-mono">CODE: UDAIPUR-24</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Admins: Devansh, Alok</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Manage Gallery">
+<span class="material-symbols-outlined text-[18px]">collections</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" title="Edit Roles">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md tracking-wider">Inspect</button>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-xl bg-surface-container flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="High society luxury black-tie gala dinner at The Oberoi New Delhi with chandeliers and champagne towers, editorial photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAui5Z6X6X0Dtbqv0EORKi4n6pXuRzf9iNYpqCgdp_O2RDwm2GBKlmjjs3tD2iSHgILCk4SOlcIBfzI4jBXzmbFRFU6m_DhA2Kz0HW2AWyySMvUw6-Z35aaI7n4LWf1wwCYqxVIyWC5URR-Ekm70vgGSw2S2b8rzUJhNB6ExbVdBtqAqtpYcELJ2bRAlAGYWLmh0bAe6-dN9_Uh8yHg1lHSSOktrG7Lle4JABLs2UaA8Ada9kJfDXI3bg"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Oberoi Heritage Gala 2024</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant">COLOR GRADING</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Nov 28 • Client: Oberoi Heritage Group</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-caps text-label-caps text-on-surface bg-surface-container-high px-2 py-0.5 rounded tracking-widest font-mono">CODE: OBEROI-GL</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Admins: Kabir Rao</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">collections</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md tracking-wider">Inspect</button>
+</div>
+</div>
+<!-- Event Card 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-xl bg-surface-container flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Elaborate Sangeet stage dance production with gold stage drapery and dramatic rim lighting, luxury Indian wedding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHpoifjvuXP1Lt5UJ1aUFzz_Rt9mrI5WWCkRKiypZN72hOBlzwF4c2XzelKBoPtHLz54mRT4NYCsC4pFW8yeHSWL9l6lQfbXJGWg_Vh_rSFvcyq6qk16QcFM-B0ikYgjCedgk9JyIoLmiCWpnO6PgGiqm6pgHyQ7TUgNK2yITXYLSVZBTGRB4-AAWyhm2bSzc903yTrUEkor6CO3bbtgeSpBlXOVfSazlYWcQQTGNMSnJ4L-zONkgsnA"/>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Mehta &amp; Singhal Sangeet Soirée</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-surface-container text-on-surface-variant">DELIVERY READY</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Oct 14 • Client: Dr. Ananya Mehta</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-caps text-label-caps text-on-surface bg-surface-container-high px-2 py-0.5 rounded tracking-widest font-mono">CODE: MEHTA-SGT</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Admins: Priya Nambiar</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-center">
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">collections</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md tracking-wider">Inspect</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Admin Creation & Team Management (Col 5) -->
+<div class="lg:col-span-5 flex flex-col gap-5">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface">Admin Access &amp; Delegation</span>
+<button class="font-label-md text-label-md text-secondary hover:underline flex items-center gap-1" onclick="toggleModal('modal-create-admin')">
+<span class="material-symbols-outlined text-[16px]">add</span> Create Code
+        </button>
+</div>
+<!-- Quick Referral Key Generator Box -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps uppercase text-secondary">Active Invite Key</span>
+<span class="font-headline-sm text-headline-sm font-mono tracking-wider text-on-surface mt-0.5" id="active-admin-code">PS-ADMIN-9482</span>
+</div>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all text-body-sm" onclick="copyAdminCode()">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+<span class="font-label-md text-label-md" id="copy-text">Copy Link</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Grants Level-2 Operator clearance: live proxy previews, raw DNG tagging, and high-speed upload bucket access.</p>
+<div class="flex items-center justify-between pt-2 border-t border-surface-container">
+<span class="font-label-caps text-label-caps text-on-surface-variant">EXPIRES: 48 HOURS (1 USE REMAINING)</span>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface flex items-center gap-1 transition-colors" onclick="regenerateCode()">
+<span class="material-symbols-outlined text-[14px]">refresh</span> Refresh Key
+          </button>
+</div>
+</div>
+<!-- Admins & Privileges Directory -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Privileged Studio Admins (6)</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Tier Matrix</span>
+</div>
+<div class="flex flex-col divide-y divide-surface-container">
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-on-surface">DK</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Devansh Kapoor</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Lead Colorist • 3 Events Assigned</div>
+</div>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container-low px-2 py-0.5 rounded text-on-surface">FULL ACCESS</span>
+</div>
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-on-surface">PN</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Priya Nambiar</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Field Director • Mehta Sangeet</div>
+</div>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container-low px-2 py-0.5 rounded text-on-surface">INGEST ONLY</span>
+</div>
+<div class="py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-on-surface">KR</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Kabir Rao</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Senior DIT • Oberoi Heritage</div>
+</div>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container-low px-2 py-0.5 rounded text-on-surface">EDIT PRIVILEGE</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Bulk Event Photos & Videos Ingest Dropzone -->
+<section class="flex flex-col gap-6" id="bulk-ingest">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">High-Throughput Node</span>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-1">Multi-Stream Bulk Media Ingest</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Accelerated multi-part parallel upload. Accommodates 10,000+ uncompressed Hasselblad/Sony RAWs and 4K Apple ProRes 422 HQ footage.</p>
+</div>
+<!-- Target Event Dropdown Selector -->
+<div class="flex items-center gap-3 bg-surface-container-lowest p-2 rounded-2xl shadow-sm">
+<label class="font-label-caps text-label-caps text-on-surface-variant pl-3 uppercase" for="target-event">Target Scope:</label>
+<select class="bg-surface-container px-4 py-2 rounded-xl text-body-sm font-body-sm text-on-surface outline-none border-0 font-medium" id="target-event">
+<option selected="">The Royal Udaipur Wedding (UDAIPUR-24)</option>
+<option>Oberoi Heritage Gala 2024 (OBEROI-GL)</option>
+<option>Mehta &amp; Singhal Sangeet Soirée (MEHTA-SGT)</option>
+<option>Unassigned Master Studio Ingest</option>
+</select>
+</div>
+</div>
+<!-- Dropzone Canvas -->
+<div class="bg-surface-container-lowest rounded-3xl p-8 lg:p-12 shadow-sm flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-300 hover:shadow-md cursor-pointer group" onclick="document.getElementById('file-upload-input').click()">
+<input class="hidden" id="file-upload-input" multiple="" onchange="handleFileSimulation(event)" type="file"/>
+<div class="w-20 h-20 rounded-full bg-surface-container-high flex items-center justify-center mb-5 group-hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[36px] text-secondary">drive_folder_upload</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-normal">Drop Entire CFexpress / SD Cards or Folder Tree</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg mt-2">Drag 10,000+ files directly from directory. Supports .CR3, .ARW, .DNG, .MOV, .MXF, and .MP4 with automatic sidecar preservation.</p>
+<div class="flex flex-wrap items-center justify-center gap-4 mt-6">
+<span class="font-label-caps text-label-caps bg-surface-container px-3 py-1.5 rounded-full text-on-surface-variant">MAX BATCH: 250 GB</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-3 py-1.5 rounded-full text-on-surface-variant">ASPERA ACCELERATED</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-3 py-1.5 rounded-full text-on-surface-variant">AUTO FACE CLUSTERING</span>
+</div>
+</div>
+<!-- Active Multi-File Transfer Monitor -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-label-lg text-label-lg text-on-surface">Ingest Processing Pipeline</span>
+<span class="font-label-caps text-label-caps px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container">3 STREAM JOBS ACTIVE</span>
+</div>
+<span class="font-label-md text-label-md font-mono text-on-surface-variant">920 Mbps Global Sync</span>
+</div>
+<!-- Ingest Status Rows -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Job 1: Ingesting / Uploading -->
+<div class="p-4 rounded-xl bg-surface-container flex flex-col justify-between gap-3">
+<div class="flex items-start justify-between">
+<div>
+<div class="font-label-lg text-label-lg text-on-surface truncate">Batch_A_Varmala_SonyA1</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">1,480 / 2,200 RAW files</div>
+</div>
+<span class="font-label-caps text-label-caps text-secondary font-bold">UPLOADING</span>
+</div>
+<div>
+<div class="w-full bg-surface-dim h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full transition-all duration-300" style="width: 68%"></div>
+</div>
+<div class="flex justify-between items-center mt-1 text-body-sm text-on-surface-variant">
+<span>68% • 1.2 GB/s</span>
+<span>~3 mins left</span>
+</div>
+</div>
+</div>
+<!-- Job 2: Face Indexing -->
+<div class="p-4 rounded-xl bg-surface-container flex flex-col justify-between gap-3">
+<div class="flex items-start justify-between">
+<div>
+<div class="font-label-lg text-label-lg text-on-surface truncate">Ceremony_Highlights_ProRes</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">4K Apple ProRes • 48.6 GB</div>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant font-bold">INDEXING FACES</span>
+</div>
+<div>
+<div class="w-full bg-surface-dim h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-300" style="width: 89%"></div>
+</div>
+<div class="flex justify-between items-center mt-1 text-body-sm text-on-surface-variant">
+<span>89% • Neural Vectorizing</span>
+<span>182 subjects found</span>
+</div>
+</div>
+</div>
+<!-- Job 3: Ready -->
+<div class="p-4 rounded-xl bg-surface-container flex flex-col justify-between gap-3">
+<div class="flex items-start justify-between">
+<div>
+<div class="font-label-lg text-label-lg text-on-surface truncate">Baraat_LeicaM11_Master</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">640 DNG Originals • 38.4 GB</div>
+</div>
+<span class="font-label-caps text-label-caps text-secondary font-bold">READY</span>
+</div>
+<div>
+<div class="w-full bg-surface-dim h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 100%"></div>
+</div>
+<div class="flex justify-between items-center mt-1 text-body-sm text-on-surface-variant">
+<span>100% Ingested</span>
+<span>Proof Gallery Live</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Media Previews & Embedded High-Fidelity Video Player -->
+<section class="flex flex-col gap-6">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">Inspection &amp; QC Desk</span>
+<h2 class="font-headline-md text-headline-md text-on-surface mt-1">Proof Previews &amp; Master 4K Player</h2>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-colors text-label-lg font-label-lg shadow-sm" id="toggle-gallery-view" onclick="toggleFullGalleryModal()">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+<span>See all event photos (1,842)</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Interactive Custom Video Player (Col 7) -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-5 rounded-3xl shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Master Highlight Reel Preview</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">UDAIPUR_TEASER_4K.MOV</span>
+</div>
+<span class="font-label-caps text-label-caps text-secondary">COLOR GRADED [ARRI LOG3]</span>
+</div>
+<!-- Custom Video Canvas Element -->
+<div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-primary group flex items-center justify-center">
+<div class="w-full h-full bg-cover bg-center" data-alt="Cinematic luxury wedding highlight frame of bride in bespoke gold lehenga walking through ancient archways lit by torches, shallow depth of field, anamorphic film grain." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBzyXcb4PMMLpF45xJy2E4feqbGtQ7_cErx0b2uJq5XmX9XB_P3nSa6ePTbJ1lb_vh2xCWLMntXtXZP_MOaHFzoj9t5tz2gAZU5Av6rv2_kCk91sNOlDEcocodLrazyTK4fnwLBVWHyHS4HMpZ5vUqw6t8U9yLlK7isvZYLo4XB6yWYhIH7VAgWMPfPqvAGDyAx7RUm__gp-wku7ayU-eJRIjdzkwJ3Z8YArFsw2YmS5waITajUzWeZeA')"></div>
+<!-- Play Overlay Center Glow -->
+<button class="absolute w-16 h-16 rounded-full bg-surface/85 backdrop-blur-md flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-xl" id="main-play-btn" onclick="toggleVideoPlayback()">
+<span class="material-symbols-outlined text-[32px] ml-0.5" id="center-play-icon">play_arrow</span>
+</button>
+<!-- Player Controls Bar -->
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex flex-col gap-2 transition-opacity duration-300">
+<!-- Scrub Timeline -->
+<div class="relative w-full h-1 bg-white/30 rounded-full cursor-pointer overflow-hidden group/scrub" onclick="seekVideo(event)">
+<div class="bg-secondary-fixed h-full rounded-full" id="video-progress" style="width: 44%"></div>
+</div>
+<div class="flex items-center justify-between text-white text-body-sm font-body-sm pt-1">
+<div class="flex items-center gap-3">
+<button class="hover:text-secondary-fixed transition-colors" onclick="toggleVideoPlayback()">
+<span class="material-symbols-outlined text-[20px]" id="bottom-play-icon">play_arrow</span>
+</button>
+<div class="flex items-center gap-1.5 font-mono text-label-md">
+<span id="video-time">01:38</span>
+<span class="text-white/40">/</span>
+<span>03:45</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Volume Toggle -->
+<button class="hover:text-secondary-fixed transition-colors" onclick="toggleMute()">
+<span class="material-symbols-outlined text-[20px]" id="volume-icon">volume_up</span>
+</button>
+<!-- Resolution Switcher -->
+<button class="font-label-caps text-label-caps bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white tracking-widest" id="res-badge" onclick="toggleResolution()">
+                  4K MASTER
+                </button>
+<!-- Fullscreen -->
+<button class="hover:text-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-[20px]">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between px-2 pt-1 text-on-surface-variant font-body-sm text-body-sm">
+<span>Audio Sync: Multitrack Stereo 24-bit 48kHz</span>
+<span>Codec: Apple ProRes 422 HQ (Direct Ingest Stream)</span>
+</div>
+</div>
+<!-- Curated Thumbnail Gallery & Metadata Inspect (Col 5) -->
+<div class="lg:col-span-5 bg-surface-container-lowest p-6 rounded-3xl shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Recent Asset Influx (6)</span>
+<span class="font-label-md text-label-md text-secondary">Click to Inspect RAW</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<!-- Thumbnail 1 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0091.CR3', 'ISO 400 • 50mm f/1.2 • 1/500s', 'Ceremony Procession')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Portrait of an Indian groom adorned in royal traditional cream sherwani with emerald jewels, softly diffused golden hour light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp2Yd8IKvKB0_0xd5iK7H-R7opMox5-mTUmTtMWoJQpwxE70NBsCgw3jVVxFl17pB5u5wj5Klkn4-Od7x1s-EewkqoOiyaEDFMSUciH9E6zlDeigBDvl_wDUIcb_qQCaIw1-oGyhWsvi6glsLUW-1kHXSb6rfy9o_oBwC7_agJN4DqhT_zVk8wAAXmog_1btgFeze7EHfnI5QsAjzQMMuuYT-FGfgeaznSaeZTAKF-Btj1fJTarYDbkw"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+<!-- Thumbnail 2 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0114.CR3', 'ISO 800 • 85mm f/1.4 • 1/250s', 'Varmala Exchange')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Close up shot of delicate mehendi henna hands holding traditional royal jasmine floral garland, luxury wedding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLLLHw475-t7zIxWKrHU7bLC0uOulDVLxnyfOzQwDXzNhHqx6bmwD9X22EX2e2IZlLamwPZuhaB4xnIT35ZkVSq0S33oGI3KzH1nkCCq9D8YTQQ0sdomNOWOq8v3uExuu-fdNS_geCEZ0YdFk9uzCZZAmXJ2ZQr0Pmf4yUyEgL6MDJHXKdmRTThkUpqKiDndKbA13y4qXad_KM39asDVVtzMuFDUgvvXF3QJo_pDB9DHy1Ptfjcytawg"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+<!-- Thumbnail 3 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0238.CR3', 'ISO 200 • 35mm f/1.4 • 1/1000s', 'Palace Courtyard')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Grand wide architectural shot of Udaipur City Palace lit with thousands of flickering oil lamps and ambient fire pits at night." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXl6h2bgZLCm_6ZD-vDW5_RC2CjFVNk_HLYMME2UbD7Z38rGyk0MvBt0sgNvsX28MwR-A9PGMvof7qUI_PSPegy-yAUzPGxbFLD9DHaltqHiR-8qWFzebVH_ZvlBXEJCTzAom7MkfG5hXmo57YrEzifAr9YpRRwkdUR6eggcSEDieN3peKolfwK4CcTrJG4UdXRIXZOKRAXPOgW1O2tcrld6CHIQbNFxWTvjf_r8Y6Aq2nH510mPxouQ"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+<!-- Thumbnail 4 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0412.CR3', 'ISO 640 • 70-200mm f/2.8 • 1/400s', 'Pheras Sacred Fire')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Sacred Hindu marriage fire ritual with red rose petals and ghee offerings, dramatic warm sparks and smoke haze." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVAo4mIbK_arWkDUiiyFEVvghY97GEs5kn8-2jpX8_FqWLbUMUW8Zfws6JYKvOyqeIGP-bCnhGBlGbHk04S6AJ50ks29TjmPuHovUt6QoEhIyCWgqfDyaCf7bR8zShryR-XKM2nykXG_i3a5uSipNBuSPEQTKr64dlp3uE93ovKsmpmZ8IaDKF5xZHe-yb8uHsfYhFPz-h8WAnTjrcFvpzqtt7tY6Qe8vLTO4QhBy-dpEcBT-M20X6Ag"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+<!-- Thumbnail 5 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0589.CR3', 'ISO 1600 • 24mm f/1.4 • 1/160s', 'Baraat Drum Troupe')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Dynamic energetic celebration of baraat wedding procession with brass band performers in royal turbans and colored smoke flare." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCro7ZURW_tXbCfZqfFPzxrs0ln9GZLp_EFmB6vizpoMQLhnPsqx7VPtPWRYblNNPscEE8sghHYmZc76ZNEh1XTa7Gf9Qi6QpIBwgYDrJyTZ4PlExdg3v33GY-RHrsSBkBD0CiliWoglvgLVDZKOQe7E9L2YXjFVFggcxYN26hISn6H6twOJgFuNo6MYn_N18V1S6EL4VpFXc6tUSIlq261T6NUf5YLk2_x9PUG55E4GJx06TwpKe-YDw"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+<!-- Thumbnail 6 -->
+<div class="aspect-square rounded-xl overflow-hidden bg-surface-container cursor-pointer group relative" onclick="inspectPhoto('UDAIPUR_RAW_0702.CR3', 'ISO 100 • 50mm f/1.8 • 1/2000s', 'Post-Rituals Portrait')">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="High editorial fine art couple portrait on royal palace marble balcony overlooking lake Pichola at dusk, ethereal elegance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuArxS8zEt1UHMsbla1sOkC4MxYsPZDZdgLwuR7porjXbWCBRVGj-pcH2q1wrfxSnUSQ-ZNdtfetgE9RDwjp8Oyup64V3BztUUz9aLIXlnugG3eijvFEtBBwucI9g9Wn_UIKvw0eI-d9twIIO1nZlmOidKOyRKFjihMDx7xizn4IwBim1BzCu8NjzLms-ekP7ijN6U4uc-U5CRbikb8oBpnZWhUdvwg321ca4cPXcgCpNZZHgLbRifB95A"/>
+<span class="absolute bottom-1 right-1 font-label-caps text-label-caps bg-black/60 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">RAW</span>
+</div>
+</div>
+<!-- Dynamic Asset Inspect Panel -->
+<div class="p-4 rounded-2xl bg-surface-container flex flex-col gap-2 mt-2" id="inspector-box">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-secondary">Active Inspector Selection</span>
+<span class="font-label-caps text-label-caps bg-surface-container-high px-2 py-0.5 rounded text-on-surface">CANON R5C</span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface" id="inspect-filename">UDAIPUR_RAW_0091.CR3</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant" id="inspect-meta">ISO 400 • 50mm f/1.2 • 1/500s • Ceremony Procession</div>
+<div class="flex items-center gap-2 pt-2">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-dim font-label-md text-label-md text-on-surface transition-colors">Download DNG</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-dim font-label-md text-label-md text-on-surface transition-colors">Assign Face Tag</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- MODAL: Create New Event -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden" id="modal-create-event">
+<div class="bg-surface-container-lowest w-full max-w-xl rounded-3xl p-8 shadow-2xl flex flex-col gap-6 relative">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">New Production Key</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">Create Event &amp; Access Code</h3>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-on-surface rounded-full hover:bg-surface-container" onclick="toggleModal('modal-create-event')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<form class="flex flex-col gap-4" onsubmit="handleCreateEvent(event)">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Event Title</label>
+<input class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none focus:ring-1 focus:ring-secondary" placeholder="e.g. Kapoor-Singhania Jodhpur Wedding" required="" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Production Date</label>
+<input class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none focus:ring-1 focus:ring-secondary" required="" type="date"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Client Legal Name</label>
+<input class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none focus:ring-1 focus:ring-secondary" placeholder="e.g. Siddharth Singhania" required="" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Event Access Code</label>
+<input class="bg-surface-container px-4 py-3 rounded-xl font-mono text-body-md font-body-md text-on-surface border-0 outline-none uppercase font-semibold" type="text" value="JODHPUR-25"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Assigned Lead Admin</label>
+<select class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none">
+<option>Devansh Kapoor (Lead Colorist)</option>
+<option>Priya Nambiar (Field Director)</option>
+<option>Kabir Rao (Senior DIT)</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-end gap-3 pt-4 border-t border-surface-container">
+<button class="px-5 py-2.5 rounded-xl text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg" onclick="toggleModal('modal-create-event')" type="button">Cancel</button>
+<button class="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-surface-container-highest hover:text-on-surface transition-all" type="submit">Initialize Event Hub</button>
+</div>
+</form>
+</div>
+</div>
+<!-- MODAL: Generate Admin Referral Code -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden" id="modal-create-admin">
+<div class="bg-surface-container-lowest w-full max-w-lg rounded-3xl p-8 shadow-2xl flex flex-col gap-6 relative">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">Internal Delegation</span>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">Issue Admin Referral Key</h3>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-on-surface rounded-full hover:bg-surface-container" onclick="toggleModal('modal-create-admin')">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Staff Candidate Name / Email</label>
+<input class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none" placeholder="e.g. arjun@purusharthstudio.com" type="text"/>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-on-surface-variant">Privilege Tier</label>
+<select class="bg-surface-container px-4 py-3 rounded-xl text-body-md font-body-md text-on-surface border-0 outline-none">
+<option>Lead Assistant (Ingest &amp; Metadata Indexing)</option>
+<option>Master Colorist (ProRes Stream &amp; LUT Apply)</option>
+<option>Account Executive (Financials &amp; Deliverables)</option>
+</select>
+</div>
+<div class="p-4 rounded-xl bg-surface-container flex flex-col gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant">ONE-TIME GENERATED LINK</span>
+<span class="font-mono text-body-sm text-secondary truncate">https://purusharth.studio/onboard?key=PS-ADM-30219</span>
+</div>
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-5 py-2.5 rounded-xl text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg" onclick="toggleModal('modal-create-admin')" type="button">Close</button>
+<button class="px-6 py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-surface-container-highest hover:text-on-surface transition-all" onclick="confirmAdminInvite()" type="button">Issue &amp; Copy Link</button>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL: Full Gallery Viewer -->
+<div class="fixed inset-0 z-50 flex flex-col bg-surface-container-lowest hidden" id="modal-full-gallery">
+<div class="h-20 px-8 flex items-center justify-between border-b border-surface-container bg-surface/80 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<span class="font-headline-sm text-headline-sm text-on-surface">The Royal Udaipur Wedding</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-2.5 py-1 rounded text-secondary font-mono">1,842 ASSETS LOADED</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 bg-surface-container px-3 py-1.5 rounded-xl text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">filter_alt</span>
+<span class="text-on-surface">Tags: Varmala, Bride, 4K Footage</span>
+</div>
+<button class="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface" onclick="toggleFullGalleryModal()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Royal Indian wedding ritual portrait of bride laughing during turmeric haldi ceremony, high aesthetic editorial lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzK8uZgIH0mPMaju-eQET2hiQFtagYi1FG39Lskdu8Frem1RzwgilN-_ikAK3oWXGKZ-nh8dhIG6mwdbA9NPzEK2UFLWfFi3V3OR8pb7cQTrfwpzO3vU40WfN6wNeJFSdHSWH7IVBAGrX58DNDT8wVOQHKLpwVB0ty_bXF5exFXj8vig5PRDTSgndD61SIIZoEg0DRi4A9jeF0L8hWUHLMd__jV2MFuacY0zPYsNA_E9Yq_09nkEBZRA"/>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Intricate golden bridal necklace with raw uncut emeralds resting on bespoke velvet fabric, macro fine art photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAFzqF9GnEJ1NuEEBS0TspNYwEQz11riFGX2p_R2KKohrfROuic8pm1DYIsBstaH9sKHBjppprvzebqWkio9nDCqNs12cllph1Bk7x5D3S7kudVcE3dNxEteWE6t4l1YLjJR9i4GcBDku9HGibsWMVBvMgtqjlp0-o6vM-Iln2_ydkR518yDwWaMPN1wEjKSamv-s6WxHEJCkeHyCsymHso9MbCmSaQnBBVGEhQzM_-wkqewqCMfkztg"/>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Groom riding majestic decorated white stallion with vintage umbrella in traditional Indian royal procession at night." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDne4Hc2UiCuzNUbHfDOAXfQOAilTAwMwR28pgf35SepuNGwagrAkT_0w3IA2KyKPSvyzTGHJYG4iNvwGMhPVx2XAqoAMc26Mezc8WdEMU7oyy2IPeJQLDqV5OCMraHks-U_DFL9PqxsRclCO7sYZKbNKyx9D_3UPlwsxUGOf0rN56qUppbhiFdIEFooFIO8-L3YNtyk5-ZUa-pIuvJXR-PAWo9Q8qC4KaX6HBBn3-OzW1iEqm5Nwfrg"/>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Bride emotional hug with mother during wedding vidai farewell, tender candid moment, film aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1T1pUMkBkUvkcOy6FKFBxMDscrKQiTVCp3brG38M2_f3iIWvpq6kYCnUFk0kYL-uCTB2jiBZAJpzBwRYhUp5JQtjtUYoCAKJr_rDbjbUVsQcLnvT01siUYqAxIpE78ps_9i4JHWTTCnr3vN5SphqvSMgvZQ04F0p45qBZ8OhWMgIFY7vZmIJrjMORw_gs6RQWz2blLMQXzcztLL8XAY88JLCM-UJHXPbkjscJxdvw5X0Qtt2UHnzNxA"/>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Sunset drone overview of royal palace island lit by floating lights on serene lake with reflections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5PpkON6Rd890Q8hB4GzmjnqRoF3oqNM0tQ8EZMKsVTxiW9xjREHwrD2NxjSfjrQ_cI61t4bjD-LcPhL96mpMV_I5lk2ba6Z45niZdk-Zq7VI_BE6WZoqnKQWZlFOBYN9lMwgdtUlYcAnhnmQqSoCLKZSvf5najOCRXD0LckyJ21CrcW5nOWZT42MJLynMQqtEBnBv1Jm9nGUgeSwSoWz1x0dWpWXvqyI0CVXIDgdxU47L60Z7SdTqkg"/>
+</div>
+<div class="aspect-[4/5] rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Sufi qawwali musicians performing in open palace courtyard with marigold floral arrangements under starry sky." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjlX3eoeCbGV8WVo_vK5-txrApbfXfc2MssLKNG0hVAYChFQMevU6lIWiDqXBQCPGWK8tNZzjXEy9iMCKpkZPZCz15pzY2UKmWdil7UEzYhjkLswvY3-7HT7SyHXzUk3wyCAmdHv0B4AVI9IgwU8iy54eVvLESSvFPD6j3K3564aNayROUNV7Rmuf1rBotCphcSkmaL-u4hJ_NA-G5wCmOm7r5SVDw9rB35zf1DiCtqthGo4epTtxlIQ"/>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple Modal Toggles
+  function toggleModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.toggle('hidden');
+    }
+  }
+
+  function toggleFullGalleryModal() {
+    const gal = document.getElementById('modal-full-gallery');
+    if (gal) {
+      gal.classList.toggle('hidden');
+    }
+  }
+
+  // Copy Admin Code Action
+  function copyAdminCode() {
+    const code = document.getElementById('active-admin-code').innerText;
+    navigator.clipboard.writeText(`https://purusharth.studio/onboard?key=${code}`);
+    const copyText = document.getElementById('copy-text');
+    copyText.innerText = 'Copied!';
+    setTimeout(() => {
+      copyText.innerText = 'Copy Link';
+    }, 2000);
+  }
+
+  function regenerateCode() {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('active-admin-code').innerText = `PS-ADMIN-${randomSuffix}`;
+  }
+
+  function confirmAdminInvite() {
+    alert("Admin onboarding invite issued & copied to clipboard.");
+    toggleModal('modal-create-admin');
+  }
+
+  function handleCreateEvent(e) {
+    e.preventDefault();
+    alert("Event production initialized with access token.");
+    toggleModal('modal-create-event');
+  }
+
+  // File Upload Simulation
+  function handleFileSimulation(e) {
+    if (e.target.files.length > 0) {
+      alert(`Queued ${e.target.files.length} file(s) for high-speed multi-part ingest.`);
+    }
+  }
+
+  // Photo Inspection
+  function inspectPhoto(filename, meta, title) {
+    document.getElementById('inspect-filename').innerText = filename;
+    document.getElementById('inspect-meta').innerText = `${meta} • ${title}`;
+    const box = document.getElementById('inspector-box');
+    box.classList.add('bg-secondary-container/20');
+    setTimeout(() => {
+      box.classList.remove('bg-secondary-container/20');
+    }, 300);
+  }
+
+  // Video Player Micro-Interactions
+  let isPlaying = false;
+  let isMuted = false;
+  let is4K = true;
+
+  function toggleVideoPlayback() {
+    isPlaying = !isPlaying;
+    const centerIcon = document.getElementById('center-play-icon');
+    const bottomIcon = document.getElementById('bottom-play-icon');
+    const centerBtn = document.getElementById('main-play-btn');
+
+    if (isPlaying) {
+      centerIcon.innerText = 'pause';
+      bottomIcon.innerText = 'pause';
+      centerBtn.style.opacity = '0.3';
+    } else {
+      centerIcon.innerText = 'play_arrow';
+      bottomIcon.innerText = 'play_arrow';
+      centerBtn.style.opacity = '1';
+    }
+  }
+
+  function seekVideo(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    const percent = Math.min(Math.max(pos * 100, 0), 100);
+    document.getElementById('video-progress').style.width = percent + '%';
+    
+    // Simulate time update (03:45 total = 225s)
+    const currentSeconds = Math.floor(2.25 * percent);
+    const mins = Math.floor(currentSeconds / 60);
+    const secs = currentSeconds % 60;
+    document.getElementById('video-time').innerText = `0${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('volume-icon').innerText = isMuted ? 'volume_off' : 'volume_up';
+  }
+
+  function toggleResolution() {
+    is4K = !is4K;
+    const badge = document.getElementById('res-badge');
+    badge.innerText = is4K ? '4K MASTER' : '1080P PROXY';
+  }
+</script></main></div></body></html>

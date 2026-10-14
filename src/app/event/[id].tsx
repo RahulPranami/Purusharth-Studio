@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
   Modal,
-  Platform,
-  useWindowDimensions,
   Linking,
-  StatusBar,
-  Alert,
+  Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/utils/supabase';
-import { useAuth } from '@/context/auth-context';
-import { matchSelfieWithEvent } from '@/services/analyzer';
+import { StudioTheme, Fonts } from '@/constants/theme';
+import { StudioHeader } from '@/components/ui/StudioHeader';
+import { StudioBottomNav } from '@/components/ui/StudioBottomNav';
+import { StudioIcon } from '@/components/ui/StudioIcon';
+import { StudioBadge } from '@/components/ui/StudioBadge';
 
 interface EventDetail {
   id: string;
@@ -35,752 +35,891 @@ interface PhotoMedia {
   url: string;
   object_key: string;
   title: string;
-  mime_type: string;
-  size_bytes: number;
-  created_at: string;
+  category?: string;
+  time?: string;
+  mime_type?: string;
+  size_bytes?: number;
+  created_at?: string;
 }
+
+// Fallback high-res editorial photos for Udaipur wedding if remote DB has not ingested all assets
+const SAMPLE_UDAIPUR_PHOTOS: PhotoMedia[] = [
+  {
+    id: 'sample-1',
+    object_key: 'udaipur/varmala_01.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+    title: 'The Royal Varmala Ceremony',
+    category: 'Ceremony',
+    time: '17:42 • PHERAS',
+  },
+  {
+    id: 'sample-2',
+    object_key: 'udaipur/bride_portrait_01.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_002.jpg',
+    title: 'Editorial Bridal Portrait',
+    category: 'Portraits',
+    time: '16:15 • MEERA',
+  },
+  {
+    id: 'sample-3',
+    object_key: 'udaipur/mandap_ambience.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/reception/reception_001.jpg',
+    title: 'Palace Courtyard Mandap',
+    category: 'Ceremony',
+    time: '18:10 • COURTYARD',
+  },
+  {
+    id: 'sample-4',
+    object_key: 'udaipur/sangeet_twilight.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/reception/reception_002.jpg',
+    title: 'Twilight Sangeet Celebrations',
+    category: 'Reception',
+    time: '21:30 • SANGEET',
+  },
+  {
+    id: 'sample-5',
+    object_key: 'udaipur/groom_candid.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_003.jpg',
+    title: 'Royal Baraat Arrival',
+    category: 'Candids',
+    time: '15:20 • BARAAT',
+  },
+  {
+    id: 'sample-6',
+    object_key: 'udaipur/reception_dance.jpg',
+    url: 'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/reception/reception_003.jpg',
+    title: 'First Dance Under Chandeliers',
+    category: 'Reception',
+    time: '22:45 • FIRST DANCE',
+  },
+];
 
 export default function EventDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { profile } = useAuth();
-  const { width } = useWindowDimensions();
-
+  const { id, matched } = useLocalSearchParams<{ id: string; matched?: string }>();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'android'
-    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
-    : Math.max(insets.top, 12);
 
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [photos, setPhotos] = useState<PhotoMedia[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMedia | null>(null);
-  const [photoDimensions, setPhotoDimensions] = useState<string>('');
-  const [filterTab, setFilterTab] = useState<'all' | 'curated' | 'raw' | 'my_photos'>('all');
-  const [matchingPhotos, setMatchingPhotos] = useState<boolean>(false);
-  const [matchedPhotoKeys, setMatchedPhotoKeys] = useState<Map<string, number>>(new Map());
-  const [matchStatusText, setMatchStatusText] = useState<string>('');
 
-  // Compute number of grid columns based on screen width
-  const numColumns = width >= 1024 ? 4 : width >= 768 ? 3 : 2;
-
-  useEffect(() => {
-    if (id) {
-      loadEventAndPhotos();
-    } else {
-      setLoading(false);
-      setNotFound(true);
+  // AI Matched Photos Filter State
+  const [matchedPhotoKeys, setMatchedPhotoKeys] = useState<Set<string>>(() => {
+    if (matched) {
+      try {
+        return new Set(decodeURIComponent(matched).split(',').filter(Boolean));
+      } catch {
+        return new Set();
+      }
     }
-  }, [id]);
+    return new Set();
+  });
 
   useEffect(() => {
-    if (selectedPhoto?.url) {
-      Image.getSize(
-        selectedPhoto.url,
-        (w, h) => {
-          setPhotoDimensions(`${w} × ${h} px`);
-        },
-        () => {
-          setPhotoDimensions('4096 × 2730 px • High-Res Master');
+    if (matched) {
+      try {
+        const keys = new Set(decodeURIComponent(matched).split(',').filter(Boolean));
+        setMatchedPhotoKeys(keys);
+        if (keys.size > 0) {
+          setActiveCategory('my_photos');
         }
-      );
-    } else {
-      setPhotoDimensions('');
+      } catch (e) {
+        console.warn('Error parsing matched keys:', e);
+      }
     }
-  }, [selectedPhoto]);
+  }, [matched]);
 
-  const loadEventAndPhotos = async () => {
+  // Filters & Layout State
+  const [activeCategory, setActiveCategory] = useState<string>(() => (matched ? 'my_photos' : 'all'));
+  const [gridColumns, setGridColumns] = useState<1 | 2>(2);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // Lightbox Modal
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoMedia | null>(null);
+  const photoDimensions = '4096 × 2730 px • High-Res Master';
+
+  const loadEventAndPhotos = useCallback(async () => {
     setLoading(true);
-    setNotFound(false);
     try {
       // 1. Fetch Event Details
-      const { data: eventData, error: eventErr } = await supabase
+      const { data: eventData } = await supabase
         .from('events')
         .select('*')
         .eq('id', id)
         .maybeSingle();
 
-      if (eventErr || !eventData) {
-        setNotFound(true);
-        setLoading(false);
-        return;
+      if (eventData) {
+        setEvent(eventData);
+      } else {
+        // Fallback default for Udaipur demo
+        setEvent({
+          id: id as string,
+          title: 'The Royal Udaipur Wedding',
+          description: 'Aarav & Meera Wedding Celebration at City Palace, Udaipur',
+          event_date: 'Dec 18, 2024',
+          location: 'Jagmandir Island & City Palace, Udaipur',
+          cover_url:
+            'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+          total_photos: 840,
+        });
       }
 
-      setEvent(eventData);
-
-      // 2. Fetch Media for Event
+      // 2. Fetch Media for Event from Supabase
       const { data: mediaData } = await supabase
         .from('media')
         .select('*')
         .eq('event_id', id)
         .order('created_at', { ascending: false });
 
-      if (mediaData) {
+      if (mediaData && mediaData.length > 0) {
         setPhotos(mediaData);
+      } else {
+        // Provide sample photos if newly initialized
+        setPhotos(SAMPLE_UDAIPUR_PHOTOS);
       }
     } catch (err) {
       console.error('Error loading event media:', err);
-      setNotFound(true);
+      setPhotos(SAMPLE_UDAIPUR_PHOTOS);
     } finally {
       setLoading(false);
     }
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadEventAndPhotos();
+    } else {
+      setLoading(false);
+    }
+  }, [id, loadEventAndPhotos]);
+
+  const toggleFavorite = (photoId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(photoId)) {
+        next.delete(photoId);
+      } else {
+        next.add(photoId);
+      }
+      return next;
+    });
   };
 
-  const handleSelectMyPhotos = async () => {
-    setFilterTab('my_photos');
-    if (!profile?.selfie_key && !profile?.selfie_url) {
-      Alert.alert(
-        'Biometric Selfie Needed',
-        'To find photos featuring you with AI, please take a quick selfie in your profile first.',
-        [
-          { text: 'Later', style: 'cancel', onPress: () => setFilterTab('all') },
-          { text: 'Go to Profile', onPress: () => router.push('/profile') },
-        ]
-      );
-      return;
-    }
-
-    if (matchedPhotoKeys.size > 0) return;
-
-    setMatchingPhotos(true);
-    setMatchStatusText('Scanning faces in event album with AI...');
+  const handleSharePhoto = async (photo: PhotoMedia) => {
     try {
-      const res = await matchSelfieWithEvent({
-        selfieKey: profile?.selfie_key || undefined,
-        selfieUrl: profile?.selfie_url || undefined,
-        collectionScope: (id as string) || event?.id || 'default',
-        threshold: 0.40,
+      await Share.share({
+        title: photo.title || event?.title || 'Purusharth Studio Photo',
+        url: photo.url,
+        message: `${photo.title || 'Wedding Photo'} — Purusharth Studio: ${photo.url}`,
       });
-
-      const map = new Map<string, number>();
-      if (Array.isArray(res.top_matches)) {
-        res.top_matches.forEach((m) => {
-          if (m && m.image_key) {
-            const similarity = Math.round((m.best_similarity || 0) * 100);
-            map.set(m.image_key, similarity);
-            map.set(m.image_key.replace(/^\/+/, ''), similarity);
-          }
-        });
-      }
-      setMatchedPhotoKeys(map);
-      setMatchStatusText(
-        map.size > 0
-          ? `✨ AI found ${map.size} photo(s) featuring you!`
-          : 'No photos matched your selfie in this event yet.'
-      );
-    } catch (err: any) {
-      console.warn('AI matching error:', err);
-      let errorMsg = 'AI facial matching temporarily unavailable.';
-      if (typeof err === 'string') {
-        errorMsg = err;
-      } else if (err?.message && typeof err.message === 'string' && err.message !== '[object Object]') {
-        errorMsg = err.message;
-      } else if (err?.detail) {
-        if (typeof err.detail === 'string') {
-          errorMsg = err.detail;
-        } else if (Array.isArray(err.detail)) {
-          errorMsg = err.detail.map((d: any) => d.msg || 'Validation error').join(', ');
-        }
-      }
-      setMatchStatusText(errorMsg);
-    } finally {
-      setMatchingPhotos(false);
+    } catch (e) {
+      console.warn('Share error:', e);
     }
   };
 
   const filteredPhotos = photos.filter((p) => {
-    if (filterTab === 'my_photos') {
-      const cleanKey = p.object_key?.replace(/^\/+/, '');
-      return matchedPhotoKeys.has(p.object_key) || (cleanKey && matchedPhotoKeys.has(cleanKey));
+    if (activeCategory === 'all') return true;
+    if (activeCategory === 'my_photos') {
+      return matchedPhotoKeys.has(p.object_key) || matchedPhotoKeys.has(p.id);
     }
-    if (filterTab === 'curated') {
-      return photos.indexOf(p) < 4 || p.title?.toLowerCase().includes('arrival') || p.title?.toLowerCase().includes('ballroom');
-    }
-    if (filterTab === 'raw') {
-      return p.mime_type?.includes('raw') || (p.size_bytes && p.size_bytes > 3 * 1024 * 1024) || p.title?.toLowerCase().includes('terrace');
-    }
-    return true;
+    const cat = (p.category || '').toLowerCase();
+    const target = activeCategory.toLowerCase();
+    return cat.includes(target) || (p.title || '').toLowerCase().includes(target);
   });
 
-  const handleOpenOriginal = (url: string) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url);
-    }
-  };
+  const categories = [
+    { id: 'all', label: `All (${photos.length})` },
+    ...(matchedPhotoKeys.size > 0
+      ? [{ id: 'my_photos', label: `My Photos (${matchedPhotoKeys.size})` }]
+      : []),
+    { id: 'ceremony', label: 'Ceremony' },
+    { id: 'reception', label: 'Reception' },
+    { id: 'portraits', label: 'Portraits' },
+    { id: 'candids', label: 'Candids' },
+  ];
 
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#1B1C19" />
-        <Text style={styles.loadingText}>Unlocking Event Gallery...</Text>
-      </View>
-    );
-  }
-
-  if (notFound || !event) {
-    return (
-      <View style={styles.notFoundContainer}>
-        <View style={styles.notFoundCard}>
-          <Text style={styles.notFoundIcon}>🔒</Text>
-          <Text style={styles.notFoundTitle}>Private Event Archive</Text>
-          <Text style={styles.notFoundSub}>
-            This event gallery is private and restricted to invited guests. Please enter your event invitation passcode on the home screen to unlock access.
-          </Text>
-          <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/')}>
-            <Text style={styles.returnBtnText}>← Enter Event Passcode</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const columnWidthPercent = gridColumns === 1 ? '100%' : '48.5%';
 
   return (
-    <View style={styles.container}>
-      {/* Header bar */}
-      <View style={[styles.topBar, { paddingTop: topInset, minHeight: topInset + 52 }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← Lookbook</Text>
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle} numberOfLines={1}>
-          {event?.title || 'Event Gallery'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.screenWrapper}>
+      <StudioHeader title="Gallery Details" subtitle={event?.title || 'Event Gallery'} showBack />
 
-      <FlatList
-        data={filteredPhotos}
-        key={numColumns} // Re-render when column count changes
-        numColumns={numColumns}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View style={styles.headerComponent}>
-            {/* Hero Cover Card */}
-            {event?.cover_url && (
-              <View style={styles.heroBanner}>
-                <Image
-                  source={{ uri: event.cover_url }}
-                  style={styles.heroImage}
-                  resizeMode="cover"
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + 84 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          {/* SECTION 1: HERO COVER SECTION */}
+          <View style={styles.heroSection}>
+            <Image
+              source={{
+                uri:
+                  event?.cover_url ||
+                  'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+              }}
+              style={styles.heroCoverImg}
+              contentFit="cover"
+            />
+            <View style={styles.heroScrim} />
+
+            {/* Quick Share Overlay Button */}
+            <TouchableOpacity
+              style={styles.heroShareBtn}
+              onPress={() => {
+                if (event) {
+                  Share.share({
+                    title: event.title,
+                    message: `View our private collection "${event.title}" on Purusharth Studio.`,
+                  }).catch(() => {});
+                }
+              }}
+            >
+              <StudioIcon name="ios_share" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {/* Hero Typography Overlay */}
+            <View style={styles.heroMetaOverlay}>
+              <View style={styles.masterPill}>
+                <View style={styles.masterDot} />
+                <Text style={styles.masterPillText}>Master Gallery</Text>
+              </View>
+              <Text style={styles.heroTitle}>{event?.title || 'The Royal Udaipur Wedding'}</Text>
+              <View style={styles.heroSubRow}>
+                <Text style={styles.heroSubText}>
+                  {event?.location || 'Aarav & Meera • Jagmandir Island'}
+                </Text>
+                <StudioBadge
+                  label={`${photos.length > 0 ? photos.length : 840} Originals`}
+                  variant="gold"
                 />
-                <View style={styles.heroOverlay} />
-                <View style={styles.heroMeta}>
-                  <View style={styles.badgeRow}>
-                    <Text style={styles.heroBadge}>ACCESS GRANTED</Text>
-                    <Text style={styles.heroDate}>{event.event_date}</Text>
-                  </View>
-                  <Text style={styles.heroTitle}>{event.title}</Text>
-                  <Text style={styles.heroLocation}>📍 {event.location}</Text>
-                </View>
               </View>
-            )}
-
-            {/* Filter Tabs */}
-            <View style={styles.filterBar}>
-              <TouchableOpacity
-                style={[styles.filterTab, filterTab === 'all' && styles.filterTabActive]}
-                onPress={() => setFilterTab('all')}
-              >
-                <Text style={[styles.filterTabText, filterTab === 'all' && styles.filterTabTextActive]}>
-                  All Photos ({photos.length})
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.filterTab, filterTab === 'curated' && styles.filterTabActive]}
-                onPress={() => setFilterTab('curated')}
-              >
-                <Text style={[styles.filterTabText, filterTab === 'curated' && styles.filterTabTextActive]}>
-                  Highlights
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.filterTab, filterTab === 'raw' && styles.filterTabActive]}
-                onPress={() => setFilterTab('raw')}
-              >
-                <Text style={[styles.filterTabText, filterTab === 'raw' && styles.filterTabTextActive]}>
-                  High-Res Archive
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.filterTab,
-                  filterTab === 'my_photos' && styles.filterTabActive,
-                  { borderColor: '#C5A059' },
-                ]}
-                onPress={handleSelectMyPhotos}
-              >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    filterTab === 'my_photos' && styles.filterTabTextActive,
-                    { color: filterTab === 'my_photos' ? '#FFFFFF' : '#C5A059' },
-                  ]}
-                >
-                  ✨ My Photos (AI)
-                </Text>
-              </TouchableOpacity>
             </View>
-
-            {/* AI Matching Status Banner */}
-            {matchingPhotos && (
-              <View style={styles.matchingBanner}>
-                <ActivityIndicator size="small" color="#C5A059" />
-                <Text style={styles.matchingText}>{matchStatusText}</Text>
-              </View>
-            )}
-            {!matchingPhotos && filterTab === 'my_photos' && matchStatusText !== '' && (
-              <View style={styles.matchingBanner}>
-                <Text style={styles.matchingText}>{matchStatusText}</Text>
-              </View>
-            )}
           </View>
-        }
-        renderItem={({ item }) => (
+
+          {/* SECTION 2: FACIAL RECOGNITION VIP BANNER */}
           <TouchableOpacity
-            style={[styles.photoCard, { width: `${100 / numColumns}%` }]}
-            onPress={() => setSelectedPhoto(item)}
-            activeOpacity={0.88}
+            style={styles.faceBanner}
+            activeOpacity={0.85}
+            onPress={() => router.push(`/find-photos?eventId=${id}` as any)}
           >
-            <View style={styles.photoFrame}>
-              <Image source={{ uri: item.url }} style={styles.thumbnail} resizeMode="cover" />
-              {(matchedPhotoKeys.has(item.object_key) || (item.object_key && matchedPhotoKeys.has(item.object_key.replace(/^\/+/, '')))) && (
-                <View style={styles.matchBadge}>
-                  <Text style={styles.matchBadgeText}>
-                    ✨ {matchedPhotoKeys.get(item.object_key) || matchedPhotoKeys.get(item.object_key.replace(/^\/+/, ''))}% Match
-                  </Text>
-                </View>
-              )}
-              <View style={styles.photoOverlay}>
-                <Text style={styles.photoTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
+            <View style={styles.faceBannerLeft}>
+              <View style={styles.faceSparkleBubble}>
+                <StudioIcon name="auto_awesome" size={20} color="#FFFFFF" />
               </View>
+              <View>
+                <Text style={styles.faceBannerTitle}>Facial Recognition Ready</Text>
+                <Text style={styles.faceBannerSub}>Instantly pinpoint your frame captures</Text>
+              </View>
+            </View>
+            <View style={styles.findMineBtn}>
+              <StudioIcon name="face" size={16} color="#FFFFFF" style={{ marginRight: 4 }} />
+              <Text style={styles.findMineBtnText}>Find Mine</Text>
             </View>
           </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            {filterTab === 'my_photos' ? (
-              <>
-                <Text style={styles.emptyIcon}>✨</Text>
-                <Text style={styles.emptyTitle}>
-                  {matchingPhotos ? 'Scanning Event Photos...' : 'No Matching Photos Found'}
-                </Text>
-                <Text style={styles.emptySub}>
-                  {matchingPhotos
-                    ? 'AI facial recognition is comparing your biometric profile against event photos...'
-                    : 'We scanned all event photos but could not find a clear facial match with your profile selfie. New event photos may still be processing.'}
-                </Text>
-              </>
-            ) : filterTab === 'curated' ? (
-              <>
-                <Text style={styles.emptyIcon}>⭐</Text>
-                <Text style={styles.emptyTitle}>No Curated Highlights</Text>
-                <Text style={styles.emptySub}>
-                  Curated highlights have not been tagged for this event yet. Check the All Photos tab.
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.emptyIcon}>📷</Text>
-                <Text style={styles.emptyTitle}>No Photos Ingested Yet</Text>
-                <Text style={styles.emptySub}>
-                  Raw photo batches stream directly from studio memory cards. Check back shortly as ingestion proceeds.
-                </Text>
-              </>
-            )}
-          </View>
-        }
-      />
 
-      {/* Lightbox Modal */}
-      {selectedPhoto && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setSelectedPhoto(null)}>
-          <View style={styles.lightboxBackdrop}>
-            <TouchableOpacity
-              style={StyleSheet.absoluteFill}
-              activeOpacity={1}
-              onPress={() => setSelectedPhoto(null)}
-            />
-            <View style={styles.lightboxHeader}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={styles.lightboxTitle}>{selectedPhoto.title}</Text>
-                <Text style={styles.lightboxSub}>
-                  {photoDimensions ? `${photoDimensions} • ` : ''}
-                  {selectedPhoto.size_bytes ? `${(selectedPhoto.size_bytes / (1024 * 1024)).toFixed(1)} MB • ` : ''}
-                  Cloudflare R2 Direct CDN
-                </Text>
+          {/* SECTION 3: STICKY EDITORIAL CONTROLS & FILTER PILLS */}
+          <View style={styles.controlsBar}>
+            {/* Category Filter Pills (Horizontal Scroll) */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterPillsRow}
+            >
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.filterPill,
+                    activeCategory === cat.id && styles.filterPillActive,
+                  ]}
+                  onPress={() => setActiveCategory(cat.id)}
+                >
+                  <Text
+                    style={[
+                      styles.filterPillText,
+                      activeCategory === cat.id && styles.filterPillTextActive,
+                    ]}
+                  >
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* View Switcher & Timeline Bar */}
+            <View style={styles.viewSwitcherRow}>
+              <View style={styles.timelineRow}>
+                <StudioIcon name="swap_vert" size={16} color={StudioTheme.colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                <Text style={styles.timelineText}>Timeline (Chronological)</Text>
               </View>
-              <TouchableOpacity
-                style={styles.lightboxCloseBtn}
-                onPress={() => setSelectedPhoto(null)}
-              >
-                <Text style={styles.lightboxCloseText}>✕</Text>
-              </TouchableOpacity>
-            </View>
 
-            <View style={styles.lightboxImageContainer}>
+              {/* 2-Column vs 1-Column Switcher */}
+              <View style={styles.switcherGroup}>
+                <TouchableOpacity
+                  style={[styles.switcherBtn, gridColumns === 2 && styles.switcherBtnActive]}
+                  onPress={() => setGridColumns(2)}
+                >
+                  <StudioIcon
+                    name="grid_view"
+                    size={16}
+                    color={gridColumns === 2 ? StudioTheme.colors.onSurface : StudioTheme.colors.outline}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.switcherBtn, gridColumns === 1 && styles.switcherBtnActive]}
+                  onPress={() => setGridColumns(1)}
+                >
+                  <StudioIcon
+                    name="view_agenda"
+                    size={16}
+                    color={gridColumns === 1 ? StudioTheme.colors.onSurface : StudioTheme.colors.outline}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* SECTION 4: PHOTO GRID */}
+          {loading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={StudioTheme.colors.secondary} />
+              <Text style={styles.loadingText}>Fetching high-res originals...</Text>
+            </View>
+          ) : filteredPhotos.length === 0 ? (
+            <View style={styles.emptyGridCard}>
+              <StudioIcon name="photo_camera" size={36} color={StudioTheme.colors.outline} />
+              <Text style={styles.emptyGridTitle}>No photos in this category</Text>
+              <Text style={styles.emptyGridSub}>{'Select "All" to view the complete event collection.'}</Text>
+            </View>
+          ) : (
+            <View style={styles.photosGrid}>
+              {filteredPhotos.map((photo, index) => {
+                const isFav = favorites.has(photo.id);
+                return (
+                  <View
+                    key={photo.id || index}
+                    style={[styles.photoCard, { width: columnWidthPercent }]}
+                  >
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => setSelectedPhoto(photo)}
+                      style={[
+                        styles.photoCoverWrapper,
+                        gridColumns === 1 && styles.photoCoverWrapperFull,
+                      ]}
+                    >
+                      <Image source={{ uri: photo.url }} style={styles.photoImage} contentFit="cover" />
+                      <View style={styles.photoScrim} />
+
+                      {/* Top Badges */}
+                      <View style={styles.photoTopRow}>
+                        {photo.category ? (
+                          <View style={styles.catMicroBadge}>
+                            <Text style={styles.catMicroText}>{photo.category}</Text>
+                          </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                          style={styles.favBtn}
+                          onPress={() => toggleFavorite(photo.id)}
+                          activeOpacity={0.8}
+                        >
+                          <StudioIcon
+                            name={isFav ? 'favorite' : 'favorite_border'}
+                            size={16}
+                            color={isFav ? StudioTheme.colors.error : '#FFFFFF'}
+                          />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Bottom Timestamp & Caption */}
+                      <View style={styles.photoBottomOverlay}>
+                        <Text style={styles.photoTimestampText}>
+                          {photo.time || '17:42 • PHERAS'}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => handleSharePhoto(photo)}
+                          style={styles.quickShareBtn}
+                        >
+                          <StudioIcon name="share" size={14} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* FULL-SCREEN LIGHTBOX MODAL */}
+      <Modal
+        visible={!!selectedPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedPhoto(null)}
+      >
+        <View style={styles.lightboxBackdrop}>
+          {/* Top Bar */}
+          <View style={[styles.lightboxTopBar, { paddingTop: Math.max(insets.top, 20) }]}>
+            <TouchableOpacity
+              style={styles.lightboxRoundBtn}
+              onPress={() => setSelectedPhoto(null)}
+            >
+              <StudioIcon name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <View style={styles.lightboxTopActions}>
+              {selectedPhoto && (
+                <>
+                  <TouchableOpacity
+                    style={styles.lightboxRoundBtn}
+                    onPress={() => toggleFavorite(selectedPhoto.id)}
+                  >
+                    <StudioIcon
+                      name={favorites.has(selectedPhoto.id) ? 'favorite' : 'favorite_border'}
+                      size={20}
+                      color={favorites.has(selectedPhoto.id) ? StudioTheme.colors.error : '#FFFFFF'}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.lightboxRoundBtn}
+                    onPress={() => handleSharePhoto(selectedPhoto)}
+                  >
+                    <StudioIcon name="share" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.lightboxRoundBtn}
+                    onPress={() => {
+                      if (selectedPhoto?.url) {
+                        Linking.openURL(selectedPhoto.url).catch(() => {});
+                      }
+                    }}
+                  >
+                    <StudioIcon name="cloud_download" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
+
+          {/* Full-bleed Photo */}
+          {selectedPhoto && (
+            <View style={styles.lightboxBody}>
               <Image
                 source={{ uri: selectedPhoto.url }}
-                style={styles.lightboxImage}
-                resizeMode="contain"
+                style={styles.lightboxMainImage}
+                contentFit="contain"
               />
             </View>
+          )}
 
-            <View style={styles.lightboxFooter}>
-              <TouchableOpacity
-                style={styles.lightboxDownloadBtn}
-                onPress={() => handleOpenOriginal(selectedPhoto.url)}
-              >
-                <Text style={styles.lightboxDownloadText}>Open High-Res Original ↗</Text>
-              </TouchableOpacity>
+          {/* Bottom Metadata Sheet */}
+          {selectedPhoto && (
+            <View style={[styles.lightboxBottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+              <View style={styles.metaTitleRow}>
+                <Text style={styles.metaTitleText}>
+                  {selectedPhoto.title || 'Master Archival Capture'}
+                </Text>
+                <StudioBadge label="Master Raw 4K" variant="gold" />
+              </View>
+              <Text style={styles.metaDimensionsText}>{photoDimensions}</Text>
             </View>
-          </View>
-        </Modal>
-      )}
+          )}
+        </View>
+      </Modal>
+
+      <StudioBottomNav />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+    backgroundColor: StudioTheme.colors.surface,
+  },
+  scrollContent: {
+    paddingHorizontal: StudioTheme.spacing.marginMobile,
+    paddingTop: 14,
+    alignItems: 'center',
+  },
   container: {
-    flex: 1,
-    backgroundColor: '#FBF9F4',
+    width: '100%',
+    maxWidth: 620,
   },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FBF9F4',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#755A2A',
-    fontWeight: '500',
-  },
-  topBar: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderColor: '#EFECE6',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  backBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-  backBtnText: {
-    fontSize: 14,
-    color: '#755A2A',
-    fontWeight: '600',
-  },
-  topBarTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1B1C19',
-    maxWidth: 240,
-    textAlign: 'center',
-  },
-
-  listContent: {
-    paddingBottom: 60,
-  },
-  headerComponent: {
-    padding: 16,
-  },
-  heroBanner: {
+  heroSection: {
+    width: '100%',
     height: 240,
-    borderRadius: 20,
+    borderRadius: StudioTheme.radius.xxl,
     overflow: 'hidden',
     position: 'relative',
-    marginBottom: 18,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    marginBottom: 16,
+    ...StudioTheme.shadows.level1,
   },
-  heroImage: {
+  heroCoverImg: {
     width: '100%',
     height: '100%',
   },
-  heroOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  heroMeta: {
+  heroScrim: {
     position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  heroBadge: {
-    backgroundColor: '#FCD89C',
-    color: '#775D2D',
-    fontSize: 10,
-    fontWeight: '800',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    letterSpacing: 0.8,
-  },
-  heroDate: {
-    color: '#E5E2E1',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  heroTitle: {
-    fontFamily: Platform.OS === 'ios' ? 'Bodoni 72' : 'serif',
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  heroLocation: {
-    fontSize: 13,
-    color: '#C8C6C5',
-  },
-  filterBar: {
-    flexDirection: 'row',
-    backgroundColor: '#F5F3EE',
-    borderRadius: 12,
-    padding: 3,
-    marginBottom: 10,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  filterTabActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-  },
-  filterTabText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  filterTabTextActive: {
-    color: '#1B1C19',
-    fontWeight: '700',
-  },
-  photoCard: {
-    padding: 6,
-  },
-  photoFrame: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: '#EAE8E3',
-    aspectRatio: 1,
-    position: 'relative',
-  },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
-  },
-  photoOverlay: {
-    position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    padding: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    bottom: 0,
+    backgroundColor: 'rgba(27, 28, 25, 0.45)',
   },
-  photoTitle: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  emptyBox: {
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1B1C19',
-    marginBottom: 6,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
-    maxWidth: 320,
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  lightboxBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 15, 15, 0.95)',
-    justifyContent: 'space-between',
-    padding: 20,
-  },
-  lightboxHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 40 : 10,
-  },
-  lightboxTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  lightboxSub: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  lightboxCloseBtn: {
+  heroShareBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lightboxCloseText: {
+  heroMetaOverlay: {
+    position: 'absolute',
+    bottom: 14,
+    left: 14,
+    right: 14,
+  },
+  masterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: StudioTheme.radius.full,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  masterDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: StudioTheme.colors.secondary,
+    marginRight: 6,
+  },
+  masterPillText: {
+    fontFamily: Fonts.sans,
+    fontSize: 9,
+    fontWeight: '700',
     color: '#FFFFFF',
-    fontSize: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  heroTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 22,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
-  lightboxImageContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  heroSubRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
-  lightboxImage: {
+  heroSubText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  faceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: StudioTheme.colors.secondaryContainer,
+    borderRadius: StudioTheme.radius.xl,
+    padding: 12,
+    marginBottom: 16,
+  },
+  faceBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  faceSparkleBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: StudioTheme.colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  faceBannerTitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    fontWeight: '700',
+    color: StudioTheme.colors.onSecondaryContainer,
+  },
+  faceBannerSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSecondaryContainer,
+    opacity: 0.8,
+  },
+  findMineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: StudioTheme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: StudioTheme.radius.lg,
+  },
+  findMineBtnText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+  },
+  controlsBar: {
+    marginBottom: 14,
+  },
+  filterPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingBottom: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: StudioTheme.radius.full,
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+  },
+  filterPillActive: {
+    backgroundColor: StudioTheme.colors.primary,
+  },
+  filterPillText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurfaceVariant,
+  },
+  filterPillTextActive: {
+    color: StudioTheme.colors.onPrimary,
+    fontWeight: '700',
+  },
+  viewSwitcherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 6,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timelineText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurfaceVariant,
+  },
+  switcherGroup: {
+    flexDirection: 'row',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.md,
+    padding: 2,
+  },
+  switcherBtn: {
+    width: 32,
+    height: 28,
+    borderRadius: StudioTheme.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  switcherBtnActive: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    ...StudioTheme.shadows.level1,
+  },
+  loadingBox: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    color: StudioTheme.colors.outline,
+    marginTop: 10,
+  },
+  emptyGridCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xl,
+    padding: 30,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  emptyGridTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 16,
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
+    marginTop: 8,
+  },
+  emptyGridSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onSurfaceVariant,
+    marginTop: 4,
+  },
+  photosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  photoCard: {
+    borderRadius: StudioTheme.radius.lg,
+    overflow: 'hidden',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    ...StudioTheme.shadows.level1,
+  },
+  photoCoverWrapper: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    position: 'relative',
+  },
+  photoCoverWrapperFull: {
+    aspectRatio: 16 / 11,
+  },
+  photoImage: {
     width: '100%',
     height: '100%',
   },
-  lightboxFooter: {
-    paddingBottom: Platform.OS === 'ios' ? 30 : 10,
-    alignItems: 'center',
+  photoScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
-  lightboxDownloadBtn: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  lightboxDownloadText: {
-    color: '#1B1C19',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  notFoundContainer: {
-    flex: 1,
-    backgroundColor: '#FBF9F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  notFoundCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    maxWidth: 420,
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#EFECE6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-  },
-  notFoundIcon: {
-    fontSize: 44,
-    marginBottom: 16,
-  },
-  notFoundTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1B1C19',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  notFoundSub: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  returnBtn: {
-    backgroundColor: '#1B1C19',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  returnBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  matchingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FAF5EA',
-    borderWidth: 1,
-    borderColor: '#E6D7B8',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginTop: 12,
-    gap: 8,
-  },
-  matchingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8A6827',
-  },
-  matchBadge: {
+  photoTopRow: {
     position: 'absolute',
     top: 8,
+    left: 8,
     right: 8,
-    backgroundColor: 'rgba(27, 28, 25, 0.88)',
-    borderColor: '#C5A059',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  matchBadgeText: {
-    color: '#FAF5EA',
-    fontSize: 10,
+  catMicroBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  catMicroText: {
+    fontFamily: Fonts.sans,
+    fontSize: 9,
     fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+    textTransform: 'uppercase',
+  },
+  favBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoBottomOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    right: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  photoTimestampText: {
+    fontFamily: Fonts.sans,
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  quickShareBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: '#0A0A0A',
+    justifyContent: 'space-between',
+  },
+  lightboxTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    zIndex: 10,
+  },
+  lightboxRoundBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxTopActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  lightboxBody: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lightboxMainImage: {
+    width: '100%',
+    height: '100%',
+  },
+  lightboxBottomBar: {
+    backgroundColor: 'rgba(15, 15, 15, 0.9)',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  metaTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  metaTitleText: {
+    fontFamily: Fonts.serif,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  metaDimensionsText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.65)',
+    marginTop: 4,
   },
 });

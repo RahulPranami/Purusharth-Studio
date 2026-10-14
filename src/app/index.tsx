@@ -6,20 +6,22 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   Modal,
   Platform,
-  useWindowDimensions,
-  StatusBar,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/utils/supabase';
-import { WebAuthPortal } from '@/components/web/WebAuthPortal';
+import { StudioTheme, Fonts } from '@/constants/theme';
+import { StudioHeader } from '@/components/ui/StudioHeader';
+import { StudioBottomNav } from '@/components/ui/StudioBottomNav';
+import { StudioButton } from '@/components/ui/StudioButton';
+import { StudioIcon } from '@/components/ui/StudioIcon';
+import { StudioBadge } from '@/components/ui/StudioBadge';
 
 const UNLOCKED_EVENTS_KEY = '@purusharth_unlocked_events';
 
@@ -34,14 +36,8 @@ interface EventPass {
 
 export default function ClientHomeScreen() {
   const router = useRouter();
-  const { user, profile, isAuthenticated, loading, signOut } = useAuth();
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 768;
-
+  const { user, profile, isAuthenticated } = useAuth();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'android'
-    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
-    : Math.max(insets.top, 12);
 
   const [eventCode, setEventCode] = useState('');
   const [unlocking, setUnlocking] = useState(false);
@@ -49,30 +45,34 @@ export default function ClientHomeScreen() {
   const [successMessage, setSuccessMessage] = useState('');
   const [activePasses, setActivePasses] = useState<EventPass[]>([]);
 
+  // Cinema modal
   const [previewVideoOpen, setPreviewVideoOpen] = useState(false);
-  const [activeVideoTitle, setActiveVideoTitle] = useState('');
+  const [activeVideoTitle, setActiveVideoTitle] = useState('Royal Udaipur Wedding • 4K Highlights');
 
   // Dismiss native splash screen on mount
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // Web check: if authenticated as super_admin or admin on Web, route straight to /admin
+  // Web check: if super_admin or admin on desktop web, route to /admin
   useEffect(() => {
-    if (Platform.OS === 'web' && isAuthenticated && (profile?.role === 'super_admin' || profile?.role === 'admin')) {
+    if (
+      Platform.OS === 'web' &&
+      isAuthenticated &&
+      (profile?.role === 'super_admin' || profile?.role === 'admin')
+    ) {
       router.replace('/admin' as any);
     }
-  }, [isAuthenticated, profile?.role]);
+  }, [isAuthenticated, profile?.role, router]);
 
   // Load unlocked passes (AsyncStorage + Supabase)
   useEffect(() => {
     async function loadData() {
       try {
-        // 1. Load saved passes from local storage
         const savedJson = await AsyncStorage.getItem(UNLOCKED_EVENTS_KEY);
         let passes: EventPass[] = savedJson ? JSON.parse(savedJson) : [];
 
-        // 2. If logged in, fetch user's event memberships from Supabase
+        // Fetch from Supabase event_members if logged in
         if (user?.id) {
           const { data: memberRows, error: memberErr } = await supabase
             .from('event_members')
@@ -95,20 +95,39 @@ export default function ClientHomeScreen() {
           }
         }
 
+        // If user has no passes yet, load seed events so they can explore
+        if (passes.length === 0) {
+          const { data: seedEvents } = await supabase
+            .from('events')
+            .select('id, title, total_photos, event_date, location, cover_url')
+            .limit(2);
+
+          if (seedEvents && seedEvents.length > 0) {
+            passes = seedEvents.map((ev: any) => ({
+              id: ev.id,
+              title: ev.title,
+              total_photos: ev.total_photos || 840,
+              event_date: ev.event_date || 'Dec 18, 2024',
+              location: ev.location || 'Jagmandir Island, Udaipur',
+              cover_url: ev.cover_url,
+            }));
+          }
+        }
+
         setActivePasses(passes);
       } catch (e) {
-        console.warn('Error loading initial data:', e);
+        console.warn('Error loading passes:', e);
       }
     }
 
     loadData();
   }, [user]);
 
-  // Handle Event Code submission (Supports adding multiple codes without overwrite)
+  // Handle Event Code submission
   const handleUnlockEvent = async () => {
     const code = eventCode.trim().toUpperCase();
     if (!code) {
-      setErrorMessage('Please enter an event code (e.g. UDAIPUR-24)');
+      setErrorMessage('Please enter an event code (e.g. UDAIPUR-24, OBEROI-GL)');
       return;
     }
 
@@ -117,7 +136,6 @@ export default function ClientHomeScreen() {
     setSuccessMessage('');
 
     try {
-      // Call Supabase join_event_by_code RPC
       const { data, error } = await supabase.rpc('join_event_by_code', { p_code: code });
 
       if (error) {
@@ -135,7 +153,6 @@ export default function ClientHomeScreen() {
           cover_url: data.cover_url || data.event?.cover_url,
         };
 
-        // Merge with existing AsyncStorage items to prevent overwrite
         const currentSaved = await AsyncStorage.getItem(UNLOCKED_EVENTS_KEY);
         const existingStored: EventPass[] = currentSaved ? JSON.parse(currentSaved) : [];
         const mergedMap = new Map<string, EventPass>();
@@ -149,844 +166,1262 @@ export default function ClientHomeScreen() {
         setActivePasses(updatedPasses);
         await AsyncStorage.setItem(UNLOCKED_EVENTS_KEY, JSON.stringify(updatedPasses));
 
-        setSuccessMessage(`Access granted to ${newPass.title}!`);
+        setSuccessMessage(`Access granted to "${newPass.title}"!`);
         setEventCode('');
 
-        // Navigate directly to the unlocked gallery
         setTimeout(() => {
           router.push(`/event/${targetId}` as any);
-        }, 300);
-        return;
+        }, 500);
+      } else {
+        setErrorMessage(data?.error || 'Invalid or expired event code.');
       }
-
-      setErrorMessage(data?.message || data?.error || 'Invalid or expired event code.');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Unable to access vault. Please verify your code.');
+      setErrorMessage(err.message || 'Verification failed. Please check network connectivity.');
     } finally {
       setUnlocking(false);
     }
   };
 
-  // Web requirement: Web is strictly Super Admin console!
-  if (Platform.OS === 'web') {
-    if (loading || isAuthenticated) {
-      return (
-        <View style={styles.webLoadingContainer}>
-          <ActivityIndicator size="large" color="#755A2A" />
-          <Text style={styles.webLoadingText}>PURUSHARTH STUDIO • ADMIN CONSOLE</Text>
-        </View>
-      );
-    }
+  const primeEvent = activePasses[0] || {
+    id: '11111111-1111-1111-1111-111111111111',
+    title: 'The Royal Udaipur Wedding',
+    event_date: 'Dec 18, 2024',
+    location: 'Aarav & Meera • Jagmandir Island',
+    total_photos: 840,
+    cover_url:
+      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+  };
 
-    return <WebAuthPortal />;
-  }
+  const secondaryEvent = activePasses[1] || {
+    id: '22222222-2222-2222-2222-222222222222',
+    title: 'Sangeet & Cocktail Soirée',
+    event_date: 'Dec 16, 2024',
+    location: 'The Grand Verandah & Poolside',
+    total_photos: 580,
+    cover_url:
+      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_002.jpg',
+  };
+
+  const totalPhotoCount = activePasses.reduce((acc, p) => acc + (p.total_photos || 0), 0);
+  const clientFirstName = profile?.display_name
+    ? profile.display_name.split(' ')[0]
+    : user?.email
+    ? user.email.split('@')[0]
+    : 'Guest';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
-      {/* Top Luxury Navigation Header */}
-      <View style={[styles.navHeader, { paddingTop: topInset }]}>
-        <View style={styles.brandRow}>
-          <Image
-            source={require('@/assets/images/studio-logo-transparent.png')}
-            style={styles.brandLogo}
-            contentFit="contain"
-          />
-        </View>
-
-        <View style={styles.navActions}>
-          {isAuthenticated ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <TouchableOpacity
-                style={styles.profileBtn}
-                activeOpacity={0.8}
-                onPress={() => router.push('/profile' as any)}>
-                {profile?.selfie_url ? (
-                  <Image source={{ uri: profile.selfie_url }} style={styles.avatarImg} />
-                ) : (
-                  <View style={styles.avatarFallback}>
-                    <Text style={styles.avatarFallbackText}>
-                      {(profile?.display_name || user?.email || 'U')[0].toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.signInBtn}
-              activeOpacity={0.8}
-              onPress={() => router.push('/login' as any)}>
-              <Text style={styles.signInBtnText}>Sign In</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+    <View style={styles.screenWrapper}>
+      <StudioHeader />
 
       <ScrollView
-        style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          isDesktop && styles.desktopContainer,
+          { paddingBottom: Math.max(insets.bottom, 20) + 84 },
         ]}
-        showsVerticalScrollIndicator={false}>
-        {/* Welcome Section */}
-        <View style={styles.heroSection}>
-          <Text style={styles.eyebrow}>CLIENT & DIRECTOR PORTAL</Text>
-          <Text style={styles.heroTitle}>Private Event Archives</Text>
-          <Text style={styles.heroDesc}>
-            Enter your private passcodes to access high-resolution photo galleries and cinema lookbooks.
-          </Text>
-        </View>
-
-        {/* SECTION 1: Event Code Entry Vault */}
-        <View style={styles.vaultCard}>
-          <View style={styles.vaultHeaderRow}>
-            <Text style={styles.vaultSubtitle}>ACCESS EVENT VAULT</Text>
-            <View style={styles.privatePill}>
-              <Text style={styles.privateLock}>🔒</Text>
-              <Text style={styles.privateText}>Private Passcode</Text>
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.container}>
+          {/* SECTION 1: EDITORIAL WELCOME HERO */}
+          <View style={styles.welcomeHero}>
+            <View style={styles.vaultPill}>
+              <StudioIcon name="verified" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+              <Text style={styles.vaultPillText}>Private Client Vault</Text>
             </View>
-          </View>
 
-          <Text style={styles.vaultTitle}>Enter Event Code</Text>
-          <Text style={styles.vaultHint}>
-            Add any private event code (e.g. UDAIPUR-24, OBEROI-GL) to unlock and store your gallery access.
-          </Text>
+            <View style={styles.welcomeHeadlineRow}>
+              <Text style={styles.welcomeHeadline}>Welcome, {clientFirstName}</Text>
+              <Text style={styles.volumeText}>Vol. III</Text>
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.tagIcon}>#</Text>
-            <TextInput
-              style={styles.inputField}
-              value={eventCode}
-              onChangeText={setEventCode}
-              placeholder="e.g. UDAIPUR-24"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="characters"
-              maxLength={24}
-              returnKeyType="go"
-              onSubmitEditing={handleUnlockEvent}
-            />
-          </View>
-
-          {errorMessage ? (
-            <Text style={styles.errorBanner}>{errorMessage}</Text>
-          ) : null}
-
-          {successMessage ? (
-            <Text style={styles.successBanner}>{successMessage}</Text>
-          ) : null}
-
-          <TouchableOpacity
-            style={styles.unlockBtn}
-            activeOpacity={0.85}
-            onPress={handleUnlockEvent}
-            disabled={unlocking}>
-            {unlocking ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.unlockBtnText}>VIEW EVENT PHOTOS</Text>
-                <Text style={styles.unlockBtnArrow}>→</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.aiFeatureBox}>
-            <Text style={styles.aiSparkleIcon}>✦</Text>
-            <Text style={styles.aiFeatureText}>
-              You can add multiple event codes to your device. Once unlocked, each event remains permanently accessible in your Active Passes below.
+            <Text style={styles.welcomeSub}>
+              Your private collection of lifetime memories, curated by our principal cinematographers.
             </Text>
-          </View>
 
-          {/* Active Passes Section */}
-          <View style={styles.activePassSection}>
-            <View style={styles.passHeaderRow}>
-              <Text style={styles.activePassHeader}>ACTIVE PASSES ({activePasses.length})</Text>
-              {activePasses.length > 0 && (
-                <Text style={styles.passCounter}>Tap any event to view photos</Text>
-              )}
-            </View>
-
-            {activePasses.length === 0 ? (
-              <View style={styles.emptyPassBox}>
-                <Text style={styles.emptyPassIcon}>🎟️</Text>
-                <Text style={styles.emptyPassText}>
-                  No active passes yet. Enter your private invitation code above to unlock your gallery.
+            {/* Stats Pill Strip */}
+            <View style={styles.statsStrip}>
+              <View style={styles.statsPill}>
+                <View style={styles.statsDot} />
+                <Text style={styles.statsPillText}>
+                  {activePasses.length} {activePasses.length === 1 ? 'Event' : 'Events'} Available
                 </Text>
               </View>
-            ) : (
-              activePasses.map((pass) => (
-                <TouchableOpacity
-                  key={pass.id}
-                  style={styles.passRow}
-                  activeOpacity={0.8}
-                  onPress={() => router.push(`/event/${pass.id}` as any)}>
-                  <View style={styles.passDot} />
-                  <View style={styles.passInfo}>
-                    <Text style={styles.passTitle}>{pass.title}</Text>
-                    <Text style={styles.passDetails}>
-                      {pass.total_photos > 0 ? `${pass.total_photos} Photos` : 'Gallery Ready'} •{' '}
-                      {pass.location || 'Private Venue'}
-                    </Text>
-                  </View>
-                  <Text style={styles.passChevron}>›</Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        </View>
 
-        {/* SECTION 2: Your Unlocked Event Galleries (Only shown when user has unlocked passes) */}
-        {activePasses.length > 0 && (
-          <>
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.eyebrow}>YOUR UNLOCKED ARCHIVES</Text>
-                <Text style={styles.sectionHeading}>Private Event Galleries</Text>
-              </View>
-              <View style={styles.releaseBadge}>
-                <Text style={styles.releaseBadgeText}>UNLOCKED</Text>
+              <View style={styles.statsPill}>
+                <StudioIcon name="photo_library" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                <Text style={styles.statsPillText}>
+                  {totalPhotoCount > 0 ? totalPhotoCount.toLocaleString() : '1,420'} High-Res Photos
+                </Text>
               </View>
             </View>
+          </View>
 
-            <View style={styles.collectionsGrid}>
-              {activePasses.map((item) => (
-                <View key={item.id} style={styles.collectionCard}>
-                  <View style={styles.imageBox}>
-                    {item.cover_url ? (
-                      <Image source={{ uri: item.cover_url }} style={styles.collectionImg} />
-                    ) : (
-                      <View style={styles.placeholderCover}>
-                        <Text style={styles.placeholderCoverText}>{item.title}</Text>
-                      </View>
-                    )}
-                    <View style={styles.gradientOverlay} />
-                    <View style={styles.tagBadge}>
-                      <Text style={styles.tagBadgeText}>Private Vault</Text>
+          {/* SECTION 2: PRIME FEATURE EVENT CARD */}
+          <View style={styles.primeCardSection}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionEyebrow}>Prime Feature</Text>
+              <Text style={styles.sectionDate}>{primeEvent.event_date || 'Winter 2024'}</Text>
+            </View>
+
+            <View style={styles.primeCard}>
+              <TouchableOpacity
+                style={styles.primeCoverWrapper}
+                activeOpacity={0.9}
+                onPress={() => router.push(`/event/${primeEvent.id}` as any)}
+              >
+                <Image
+                  source={{
+                    uri:
+                      primeEvent.cover_url ||
+                      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+                  }}
+                  style={styles.primeCoverImg}
+                  contentFit="cover"
+                />
+                <View style={styles.primeScrim} />
+
+                {/* Overlaid Badges */}
+                <View style={styles.primeBadgesRow}>
+                  <StudioBadge label="Full Access" variant="gold" showDot />
+                  <StudioBadge label="Master Tier" variant="gold" iconName="download_done" />
+                </View>
+
+                {/* Overlaid Title on Image */}
+                <View style={styles.primeOverlaidContent}>
+                  <Text style={styles.primeTagline}>Ceremony &amp; Reception</Text>
+                  <Text style={styles.primeTitle}>{primeEvent.title}</Text>
+                  <Text style={styles.primeSub}>
+                    {primeEvent.location || 'Aarav & Meera • Jagmandir Island'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Card Meta & Actions */}
+              <View style={styles.primeCardBody}>
+                <View style={styles.primeMetaRow}>
+                  <View style={styles.primeMetaLeft}>
+                    <View style={styles.metaItem}>
+                      <StudioIcon name="burst_mode" size={15} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                      <Text style={styles.metaText}>
+                        {primeEvent.total_photos > 0 ? `${primeEvent.total_photos} Originals` : '840 Originals'}
+                      </Text>
                     </View>
-                    <View style={styles.cardHeaderOverlay}>
-                      <Text style={styles.cardSubText}>{item.location || 'Private Event'}</Text>
-                      <Text style={styles.cardTitleText}>{item.title}</Text>
+                    <View style={styles.metaItem}>
+                      <StudioIcon name="videocam" size={15} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                      <Text style={styles.metaText}>12 Master 4K</Text>
                     </View>
                   </View>
-
-                  <View style={styles.cardFooter}>
-                    <View style={styles.metricsRow}>
-                      <Text style={styles.metricItem}>
-                        📷 {item.total_photos > 0 ? `${item.total_photos} Photos` : 'Gallery Ready'}
-                      </Text>
-                      {item.event_date && (
-                        <Text style={styles.metricItem}>
-                          📅 {item.event_date}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View style={styles.actionRow}>
-                      <TouchableOpacity
-                        style={styles.openStillsBtn}
-                        activeOpacity={0.8}
-                        onPress={() => router.push(`/event/${item.id}` as any)}>
-                        <Text style={styles.openStillsText}>OPEN GALLERY</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.watchPreviewBtn}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          setActiveVideoTitle(item.title);
-                          setPreviewVideoOpen(true);
-                        }}>
-                        <Text style={styles.watchPreviewText}>▶ PREVIEW TEASER</Text>
-                      </TouchableOpacity>
-                    </View>
+                  <View style={styles.lockRow}>
+                    <StudioIcon name="lock_open" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 3 }} />
+                    <Text style={styles.lockText}>Originals Enabled</Text>
                   </View>
                 </View>
-              ))}
+
+                <View style={styles.primeActionsGrid}>
+                  <View style={{ flex: 1, marginRight: 6 }}>
+                    <StudioButton
+                      label="Open Gallery"
+                      variant="primary"
+                      iconTrailingName="arrow_forward"
+                      onPress={() => router.push(`/event/${primeEvent.id}` as any)}
+                      size="md"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <StudioButton
+                      label="Find My Photos"
+                      variant="gold"
+                      iconName="face_retouching_natural"
+                      onPress={() => router.push(`/find-photos?eventId=${primeEvent.id}` as any)}
+                      size="md"
+                    />
+                  </View>
+                </View>
+              </View>
             </View>
-          </>
-        )}
+          </View>
+
+          {/* SECTION 3: AI FACE SEARCH PROMO BANNER */}
+          <TouchableOpacity
+            style={styles.aiBanner}
+            activeOpacity={0.85}
+            onPress={() => router.push('/find-photos' as any)}
+          >
+            <View style={styles.aiBannerLeft}>
+              <View style={styles.aiIconBubble}>
+                <StudioIcon name="psychology" size={24} color={StudioTheme.colors.secondary} />
+              </View>
+              <View style={styles.aiTextContainer}>
+                <View style={styles.aiPillRow}>
+                  <Text style={styles.aiPillText}>Instant Facial Ingestion</Text>
+                  <View style={styles.aiPulseDot} />
+                </View>
+                <Text style={styles.aiBannerTitle}>AI Face Match Available</Text>
+                <Text style={styles.aiBannerDesc}>
+                  Snap or upload a selfie to instantly index every portrait and candid you appear in across all events.
+                </Text>
+              </View>
+            </View>
+            <View style={styles.aiBannerAction}>
+              <StudioButton
+                label="Try Face Match"
+                variant="gold"
+                iconTrailingName="center_focus_strong"
+                onPress={() => router.push('/find-photos' as any)}
+                size="sm"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* SECTION 4: ACCESS EVENT VAULT (PASSCODE ENTRY) */}
+          <View style={styles.vaultCard}>
+            <View style={styles.vaultHeaderRow}>
+              <View>
+                <Text style={styles.vaultEyebrow}>ACCESS EVENT VAULT</Text>
+                <Text style={styles.vaultHeading}>Enter Event Code</Text>
+              </View>
+              <View style={styles.tokenBadge}>
+                <StudioIcon name="lock_open" size={13} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                <Text style={styles.tokenBadgeText}>Private Token</Text>
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <StudioIcon name="tag" size={18} color={StudioTheme.colors.outline} style={styles.inputTagIcon} />
+              <TextInput
+                style={styles.codeTextInput}
+                value={eventCode}
+                onChangeText={setEventCode}
+                placeholder="e.g. UDAIPUR-24, OBEROI-GL"
+                placeholderTextColor={StudioTheme.colors.outline}
+                autoCapitalize="characters"
+                maxLength={20}
+              />
+            </View>
+
+            {errorMessage ? (
+              <View style={styles.errorAlert}>
+                <Text style={styles.errorAlertText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            {successMessage ? (
+              <View style={styles.successAlert}>
+                <Text style={styles.successAlertText}>{successMessage}</Text>
+              </View>
+            ) : null}
+
+            <StudioButton
+              label={unlocking ? 'Validating Token...' : 'View Event Photos'}
+              iconTrailingName="arrow_forward"
+              onPress={handleUnlockEvent}
+              loading={unlocking}
+              size="md"
+            />
+
+            <View style={styles.vaultFeatureNote}>
+              <StudioIcon name="face_retouching_natural" size={18} color={StudioTheme.colors.secondary} style={{ marginTop: 2, marginRight: 8 }} />
+              <Text style={styles.vaultFeatureText}>
+                Access your complete photo collection. Integrated <Text style={styles.vaultFeatureBold}>AI selfie filtering</Text> automatically matches and isolates your personal portraits across all sets.
+              </Text>
+            </View>
+
+            {/* Active Passes Chip List */}
+            {activePasses.length > 0 && (
+              <View style={styles.passesSection}>
+                <Text style={styles.passesHeader}>ACTIVE PASSES</Text>
+                {activePasses.map((pass) => (
+                  <TouchableOpacity
+                    key={pass.id}
+                    style={styles.passItemRow}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/event/${pass.id}` as any)}
+                  >
+                    <View style={styles.passItemLeft}>
+                      <View style={styles.passGreenDot} />
+                      <View style={styles.passItemTextWrap}>
+                        <Text style={styles.passItemTitle} numberOfLines={1}>
+                          {pass.title}
+                        </Text>
+                        <Text style={styles.passItemSub}>
+                          {pass.total_photos > 0 ? `${pass.total_photos} Photos` : 'Master Vault'} • Full Access Granted
+                        </Text>
+                      </View>
+                    </View>
+                    <StudioIcon name="chevron_right" size={20} color={StudioTheme.colors.outline} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* SECTION 5: CURATED PORTFOLIOS & SHARED COLLECTIONS */}
+          <View style={styles.collectionsSection}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionEyebrow}>Curated Portfolios</Text>
+                <Text style={styles.sectionTitleLarge}>Shared Collections</Text>
+              </View>
+              <StudioBadge label="Master Release" variant="gold" />
+            </View>
+
+            {/* Collection Card 1 */}
+            <View style={styles.collectionCard}>
+              <View style={styles.collectionCoverWrapper}>
+                <Image
+                  source={{
+                    uri:
+                      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+                  }}
+                  style={styles.collectionCoverImg}
+                  contentFit="cover"
+                />
+                <View style={styles.collectionScrim} />
+                <View style={styles.collectionBadge}>
+                  <Text style={styles.collectionBadgeText}>Featured Gallery</Text>
+                </View>
+                <View style={styles.collectionOverlayMeta}>
+                  <Text style={styles.collectionEyebrow}>Master Curation</Text>
+                  <Text style={styles.collectionTitle}>The Royal Udaipur Highlights</Text>
+                </View>
+              </View>
+
+              <View style={styles.collectionBody}>
+                <View style={styles.collectionMetaRow}>
+                  <View style={styles.metaItem}>
+                    <StudioIcon name="photo_library" size={16} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                    <Text style={styles.metaText}>840 High-Res Photos</Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <StudioIcon name="movie" size={16} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                    <Text style={styles.metaText}>12 Cinematic Reels</Text>
+                  </View>
+                </View>
+
+                <View style={styles.collectionActions}>
+                  <View style={{ flex: 1, marginRight: 6 }}>
+                    <StudioButton
+                      label="Open Stills"
+                      iconName="photo_library"
+                      variant="outline"
+                      onPress={() => router.push(`/event/${primeEvent.id}` as any)}
+                      size="sm"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <StudioButton
+                      label="Watch Preview"
+                      iconName="play_circle"
+                      variant="gold"
+                      onPress={() => {
+                        setActiveVideoTitle('The Royal Udaipur Highlights');
+                        setPreviewVideoOpen(true);
+                      }}
+                      size="sm"
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* 4K Cinema Reel Card */}
+            <View style={styles.collectionCard}>
+              <TouchableOpacity
+                style={styles.collectionCoverWrapper}
+                activeOpacity={0.9}
+                onPress={() => {
+                  setActiveVideoTitle('Palace Twilight Cinema Still Lookbook');
+                  setPreviewVideoOpen(true);
+                }}
+              >
+                <Image
+                  source={{
+                    uri:
+                      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_002.jpg',
+                  }}
+                  style={styles.collectionCoverImg}
+                  contentFit="cover"
+                />
+                <View style={styles.collectionScrim} />
+
+                {/* Big Center Play Button */}
+                <View style={styles.playCenterCircle}>
+                  <StudioIcon name="play_arrow" size={32} color={StudioTheme.colors.primary} />
+                </View>
+
+                <View style={styles.videoDurationPill}>
+                  <Text style={styles.videoDurationText}>4K • 02:45</Text>
+                </View>
+
+                <View style={styles.collectionOverlayMeta}>
+                  <Text style={styles.collectionEyebrow}>ProRes 4444 Teaser</Text>
+                  <Text style={styles.collectionTitle}>Palace Twilight Cinema Reel</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* SECTION 6: SECONDARY EVENT CARD */}
+          <View style={styles.secondarySection}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionEyebrow}>Previous Celebration</Text>
+              <Text style={styles.sectionDate}>{secondaryEvent.event_date || 'Dec 16, 2024'}</Text>
+            </View>
+
+            <View style={styles.secondaryCard}>
+              <View style={styles.secondaryRow}>
+                <Image
+                  source={{
+                    uri:
+                      secondaryEvent.cover_url ||
+                      'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_002.jpg',
+                  }}
+                  style={styles.secondaryThumb}
+                  contentFit="cover"
+                />
+                <View style={styles.secondaryInfo}>
+                  <View style={styles.nightlifeRow}>
+                    <StudioIcon name="nightlife" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                    <Text style={styles.nightlifeText}>Music &amp; Cocktails</Text>
+                  </View>
+                  <Text style={styles.secondaryTitle} numberOfLines={1}>
+                    {secondaryEvent.title}
+                  </Text>
+                  <Text style={styles.secondarySub} numberOfLines={1}>
+                    {secondaryEvent.location || 'The Grand Verandah & Poolside'}
+                  </Text>
+                  <Text style={styles.secondaryStats}>
+                    {secondaryEvent.total_photos > 0 ? `${secondaryEvent.total_photos} High-Res Photos` : '580 Photos'} • Ready
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.secondaryBottomBar}>
+                <View style={styles.zipReadyRow}>
+                  <StudioIcon name="cloud_download" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+                  <Text style={styles.zipReadyText}>Zip Archives Ready</Text>
+                </View>
+                <StudioButton
+                  label="Open Gallery"
+                  iconTrailingName="chevron_right"
+                  variant="outline"
+                  onPress={() => router.push(`/event/${secondaryEvent.id}` as any)}
+                  size="sm"
+                  fullWidth={false}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* SECTION 7: STUDIO ASSURANCE FOOTER */}
+          <View style={styles.assuranceFooter}>
+            <View style={styles.monogramBubble}>
+              <Image
+                source={require('@/../assets/images/purusharth-studio-logo.jpg')}
+                style={styles.monogramImg}
+                contentFit="contain"
+              />
+            </View>
+            <View style={styles.assuranceTitleRow}>
+              <StudioIcon name="shield" size={15} color={StudioTheme.colors.secondary} style={{ marginRight: 6 }} />
+              <Text style={styles.assuranceTitle}>Studio Assurance</Text>
+            </View>
+            <Text style={styles.assuranceDesc}>
+              Private &amp; Secure • Watermarked Previews &amp; Cloud Originals
+            </Text>
+            <Text style={styles.assuranceSub}>
+              Encrypted Cloud Storage • Exclusively for {clientFirstName}
+            </Text>
+          </View>
+        </View>
       </ScrollView>
 
-      {/* Cinematic Film Preview Modal */}
+      {/* Cinematic Video Preview Modal */}
       <Modal
         visible={previewVideoOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setPreviewVideoOpen(false)}>
+        onRequestClose={() => setPreviewVideoOpen(false)}
+      >
         <View style={styles.videoModalBackdrop}>
           <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
+            style={styles.videoModalClose}
             onPress={() => setPreviewVideoOpen(false)}
-          />
+          >
+            <StudioIcon name="close" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+
           <View style={styles.videoModalContent}>
-            <View style={styles.videoModalHeader}>
-              <View>
-                <Text style={styles.videoPill}>4K MASTER PREVIEW</Text>
-                <Text style={styles.videoTitle}>{activeVideoTitle}</Text>
+            <View style={styles.videoPlayerBox}>
+              <Image
+                source={{
+                  uri:
+                    'https://pub-9d4e540702114b88b33aac6b160ce50f.r2.dev/udaipur_wedding/ceremony/ceremony_001.jpg',
+                }}
+                style={styles.videoPlayerPoster}
+                contentFit="cover"
+              />
+              <View style={styles.videoPlayerScrim}>
+                <View style={styles.playBigCircle}>
+                  <StudioIcon name="play_arrow" size={42} color={StudioTheme.colors.primary} />
+                </View>
               </View>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setPreviewVideoOpen(false)}>
-                <Text style={styles.closeBtnText}>✕</Text>
-              </TouchableOpacity>
             </View>
 
-            <View style={styles.videoPlayerPlaceholder}>
-              <View style={styles.playCenter}>
-                <Text style={styles.playBigIcon}>▶</Text>
-                <Text style={styles.playBigLabel}>ProRes 4444 • 03:45 Director Cut</Text>
-              </View>
+            <View style={styles.videoModalMeta}>
+              <Text style={styles.videoModalTitle}>{activeVideoTitle}</Text>
+              <Text style={styles.videoModalDesc}>
+                Shot on ARRI ALEXA Mini LF • Anamorphic Master Lookbook
+              </Text>
+              <StudioBadge label="ProRes 4444 Master" variant="gold" />
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+
+      <StudioBottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screenWrapper: {
     flex: 1,
-    backgroundColor: '#FBF9F4',
-  },
-  scrollView: {
-    flex: 1,
+    backgroundColor: StudioTheme.colors.surface,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-  desktopContainer: {
-    maxWidth: 1040,
-    width: '100%',
-    alignSelf: 'center',
-    paddingHorizontal: 32,
-  },
-  navHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EBE8E0',
-    backgroundColor: '#FBF9F4',
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  brandLogo: {
-    width: 140,
-    height: 38,
-  },
-  navActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  signInBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 7,
-    backgroundColor: '#1B1C19',
-  },
-  signInBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  profileBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#755A2A',
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarFallback: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#755A2A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarFallbackText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  heroSection: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#755A2A',
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  heroTitle: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#1B1C19',
-    marginTop: 4,
-    letterSpacing: -0.5,
-    fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
-  },
-  heroDesc: {
-    fontSize: 14,
-    color: '#555555',
-    marginTop: 6,
-    lineHeight: 22,
-  },
-  vaultCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000000',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    borderWidth: 1,
-    borderColor: '#F0ECE1',
-    marginBottom: 32,
-  },
-  vaultHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  vaultSubtitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#755A2A',
-    letterSpacing: 1.2,
-  },
-  privatePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FDF7EB',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  privateLock: {
-    fontSize: 10,
-  },
-  privateText: {
-    fontSize: 11,
-    color: '#755A2A',
-    fontWeight: '600',
-  },
-  vaultTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1B1C19',
-    marginTop: 10,
-    fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
-  },
-  vaultHint: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 4,
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F7F6F2',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E7E3D8',
-  },
-  tagIcon: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#755A2A',
-    marginRight: 10,
-  },
-  inputField: {
-    flex: 1,
-    height: 48,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1B1C19',
-    letterSpacing: 1.5,
-  },
-  errorBanner: {
-    fontSize: 12,
-    color: '#DC2626',
-    marginBottom: 10,
-    fontWeight: '500',
-  },
-  successBanner: {
-    fontSize: 12,
-    color: '#16A34A',
-    marginBottom: 10,
-    fontWeight: '600',
-  },
-  unlockBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1B1C19',
-    height: 48,
-    borderRadius: 8,
-    gap: 8,
-    marginBottom: 14,
-  },
-  unlockBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-  },
-  unlockBtnArrow: {
-    color: '#FCD89C',
-    fontSize: 18,
-  },
-  aiFeatureBox: {
-    flexDirection: 'row',
-    backgroundColor: '#FAF7F0',
-    padding: 12,
-    borderRadius: 8,
-    gap: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#EFE8DA',
-  },
-  aiSparkleIcon: {
-    fontSize: 14,
-    color: '#755A2A',
-  },
-  aiFeatureText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#555555',
-    lineHeight: 18,
-  },
-  activePassSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0ECE1',
+    paddingHorizontal: StudioTheme.spacing.marginMobile,
     paddingTop: 16,
-  },
-  passHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
   },
-  activePassHeader: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#755A2A',
-    letterSpacing: 1,
+  container: {
+    width: '100%',
+    maxWidth: 620,
   },
-  passCounter: {
-    fontSize: 11,
-    color: '#888888',
+  welcomeHero: {
+    marginBottom: 20,
+    paddingTop: 4,
   },
-  emptyPassBox: {
-    alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 12,
-    backgroundColor: '#FAF8F4',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#EFEAE0',
-    borderStyle: 'dashed',
-  },
-  emptyPassIcon: {
-    fontSize: 24,
-    marginBottom: 6,
-  },
-  emptyPassText: {
-    fontSize: 12,
-    color: '#777777',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  passRow: {
+  vaultPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F7F3',
-    padding: 12,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: StudioTheme.radius.full,
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    alignSelf: 'flex-start',
     marginBottom: 8,
   },
-  passDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#755A2A',
-    marginRight: 12,
-  },
-  passInfo: {
-    flex: 1,
-  },
-  passTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1B1C19',
-  },
-  passDetails: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  passChevron: {
-    fontSize: 18,
-    color: '#9CA3AF',
+  vaultPillText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
     fontWeight: '700',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  welcomeHeadlineRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  welcomeHeadline: {
+    fontFamily: Fonts.serif,
+    fontSize: 28,
+    fontWeight: '400',
+    color: StudioTheme.colors.onSurface,
+    letterSpacing: -0.3,
+  },
+  volumeText: {
+    fontFamily: Fonts.serif,
+    fontSize: 18,
+    fontStyle: 'italic',
+    color: StudioTheme.colors.secondary,
+    opacity: 0.8,
+  },
+  welcomeSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    color: StudioTheme.colors.onSurfaceVariant,
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  statsStrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  statsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: StudioTheme.colors.surfaceContainer,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: StudioTheme.radius.full,
+  },
+  statsDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: StudioTheme.colors.secondary,
+    marginRight: 6,
+  },
+  statsPillText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurface,
+  },
+  primeCardSection: {
+    marginBottom: 20,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  sectionHeading: {
-    fontSize: 24,
+  sectionEyebrow: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#1B1C19',
-    marginTop: 2,
-    fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
+    color: StudioTheme.colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
-  releaseBadge: {
-    backgroundColor: '#EDE8DE',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+  sectionDate: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.secondary,
+    fontWeight: '600',
   },
-  releaseBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#555555',
-    letterSpacing: 0.8,
-  },
-  collectionsGrid: {
-    gap: 20,
-  },
-  collectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+  primeCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ECE8DF',
+    borderColor: StudioTheme.colors.hairline,
+    ...StudioTheme.shadows.level1,
   },
-  imageBox: {
+  primeCoverWrapper: {
+    width: '100%',
+    aspectRatio: 16 / 10,
     position: 'relative',
-    height: 220,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
   },
-  collectionImg: {
+  primeCoverImg: {
     width: '100%',
     height: '100%',
   },
-  placeholderCover: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#27272A',
-  },
-  placeholderCoverText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  gradientOverlay: {
+  primeScrim: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(27, 28, 25, 0.45)',
   },
-  tagBadge: {
+  primeBadgesRow: {
     position: 'absolute',
-    top: 14,
-    left: 14,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    top: 10,
+    left: 10,
+    right: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  tagBadgeText: {
+  primeOverlaidContent: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+  },
+  primeTagline: {
+    fontFamily: Fonts.sans,
     fontSize: 10,
     fontWeight: '700',
-    color: '#1B1C19',
-    letterSpacing: 0.6,
+    color: StudioTheme.colors.secondaryContainer,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
   },
-  cardHeaderOverlay: {
-    position: 'absolute',
-    bottom: 14,
-    left: 14,
-    right: 14,
-  },
-  cardSubText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FCD89C',
-    letterSpacing: 1.1,
-  },
-  cardTitleText: {
-    fontSize: 20,
-    fontWeight: '700',
+  primeTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 22,
+    fontWeight: '600',
     color: '#FFFFFF',
     marginTop: 2,
-    fontFamily: Platform.select({ ios: 'Georgia', default: 'serif' }),
   },
-  cardFooter: {
-    padding: 16,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 14,
-  },
-  metricItem: {
+  primeSub: {
+    fontFamily: Fonts.sans,
     fontSize: 12,
-    color: '#555555',
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 2,
+  },
+  primeCardBody: {
+    padding: 14,
+  },
+  primeMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  primeMetaLeft: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
     fontWeight: '500',
   },
-  actionRow: {
+  lockRow: {
     flexDirection: 'row',
-    gap: 10,
-  },
-  openStillsBtn: {
-    flex: 1,
-    height: 42,
-    backgroundColor: '#F3F0E8',
-    borderRadius: 6,
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  openStillsText: {
-    fontSize: 11,
+  lockText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
     fontWeight: '700',
-    color: '#1B1C19',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  primeActionsGrid: {
+    flexDirection: 'row',
+  },
+  aiBanner: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.xxl,
+    padding: 14,
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  aiBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  aiIconBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: StudioTheme.colors.secondaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  aiTextContainer: {
+    flex: 1,
+  },
+  aiPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  aiPillText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  watchPreviewBtn: {
-    flex: 1,
-    height: 42,
-    backgroundColor: '#755A2A',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
+  aiPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: StudioTheme.colors.secondary,
   },
-  watchPreviewText: {
+  aiBannerTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 17,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurface,
+  },
+  aiBannerDesc: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onSurfaceVariant,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  aiBannerAction: {
+    alignSelf: 'flex-end',
+  },
+  vaultCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
+    padding: StudioTheme.spacing.lg,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    marginBottom: 20,
+    ...StudioTheme.shadows.level1,
+  },
+  vaultHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  vaultEyebrow: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  vaultHeading: {
+    fontFamily: Fonts.serif,
+    fontSize: 18,
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
+    marginTop: 2,
+  },
+  tokenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: StudioTheme.radius.full,
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+  },
+  tokenBadgeText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.xl,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    marginBottom: 12,
+  },
+  inputTagIcon: {
+    marginRight: 8,
+  },
+  codeTextInput: {
+    flex: 1,
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+    paddingVertical: 12,
+    letterSpacing: 1.5,
+  },
+  errorAlert: {
+    backgroundColor: StudioTheme.colors.errorContainer,
+    padding: 10,
+    borderRadius: StudioTheme.radius.lg,
+    marginBottom: 10,
+  },
+  errorAlertText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onErrorContainer,
+  },
+  successAlert: {
+    backgroundColor: StudioTheme.colors.successSurface,
+    padding: 10,
+    borderRadius: StudioTheme.radius.lg,
+    marginBottom: 10,
+  },
+  successAlertText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.success,
+  },
+  vaultFeatureNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    padding: 10,
+    borderRadius: StudioTheme.radius.lg,
+    marginTop: 12,
+  },
+  vaultFeatureText: {
+    fontFamily: Fonts.sans,
     fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
+    flex: 1,
+    lineHeight: 16,
+  },
+  vaultFeatureBold: {
+    fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+  },
+  passesSection: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: StudioTheme.colors.hairline,
+  },
+  passesHeader: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    color: StudioTheme.colors.outline,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  passItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    padding: 10,
+    borderRadius: StudioTheme.radius.lg,
+    marginBottom: 6,
+  },
+  passItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  passGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: StudioTheme.colors.secondary,
+    marginRight: 8,
+  },
+  passItemTextWrap: {
+    flex: 1,
+  },
+  passItemTitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurface,
+  },
+  passItemSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.onSurfaceVariant,
+    marginTop: 1,
+  },
+  collectionsSection: {
+    marginBottom: 20,
+  },
+  sectionTitleLarge: {
+    fontFamily: Fonts.serif,
+    fontSize: 20,
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
+  },
+  collectionCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    marginTop: 12,
+    ...StudioTheme.shadows.level1,
+  },
+  collectionCoverWrapper: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    position: 'relative',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+  },
+  collectionCoverImg: {
+    width: '100%',
+    height: '100%',
+  },
+  collectionScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(27, 28, 25, 0.4)',
+  },
+  collectionBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: StudioTheme.radius.full,
+  },
+  collectionBadgeText: {
+    fontFamily: Fonts.sans,
+    fontSize: 9,
+    fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  collectionOverlayMeta: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    right: 10,
+  },
+  collectionEyebrow: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondaryContainer,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  collectionTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  collectionBody: {
+    padding: 12,
+  },
+  collectionMetaRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 10,
+  },
+  collectionActions: {
+    flexDirection: 'row',
+  },
+  playCenterCircle: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...StudioTheme.shadows.level2,
+  },
+  videoDurationPill: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  videoDurationText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
     fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 1,
+  },
+  secondarySection: {
+    marginBottom: 20,
+  },
+  secondaryCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    ...StudioTheme.shadows.level1,
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  secondaryThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: StudioTheme.radius.xl,
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+  },
+  secondaryInfo: {
+    flex: 1,
+  },
+  nightlifeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  nightlifeText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  secondaryTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 16,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurface,
+  },
+  secondarySub: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
+    marginTop: 1,
+  },
+  secondaryStats: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.outline,
+    marginTop: 4,
+  },
+  secondaryBottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: StudioTheme.colors.hairline,
+  },
+  zipReadyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  zipReadyText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
+  },
+  assuranceFooter: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.xxl,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    marginBottom: 10,
+  },
+  monogramBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  monogramImg: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  assuranceTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  assuranceTitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  assuranceDesc: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  assuranceSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.outline,
+    textAlign: 'center',
+    marginTop: 4,
   },
   videoModalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: 'rgba(15, 15, 15, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+  },
+  videoModalClose: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   videoModalContent: {
     width: '100%',
-    maxWidth: 680,
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
+    maxWidth: 600,
+    alignItems: 'center',
+  },
+  videoPlayerBox: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: StudioTheme.radius.xl,
     overflow: 'hidden',
-  },
-  videoModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-  },
-  videoPill: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FCD89C',
-    letterSpacing: 1.2,
-  },
-  videoTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#334155',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  videoPlayerPlaceholder: {
-    height: 320,
-    position: 'relative',
     backgroundColor: '#000000',
+    position: 'relative',
+  },
+  videoPlayerPoster: {
+    width: '100%',
+    height: '100%',
+  },
+  videoPlayerScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  playCenter: {
+  playBigCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  playBigIcon: {
-    fontSize: 48,
+  videoModalMeta: {
+    alignItems: 'center',
+    marginTop: 16,
+    gap: 6,
+  },
+  videoModalTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 20,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
-  playBigLabel: {
-    marginTop: 10,
-    color: '#E2E8F0',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  webLoadingContainer: {
-    flex: 1,
-    minHeight: '100%',
-    backgroundColor: '#FAF8F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  webLoadingText: {
-    marginTop: 16,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-    color: '#755A2A',
-  },
-  webSignOutBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: '#F5F2EC',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E7E0D6',
-  },
-  webSignOutText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#78716C',
+  videoModalDesc: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.75)',
   },
 });

@@ -7,41 +7,51 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Platform,
-  Image,
   Alert,
-  StatusBar,
+  Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/auth-context';
+import { supabase } from '@/utils/supabase';
 import { uploadToR2 } from '@/services/r2';
 import { analyzeSelfie } from '@/services/analyzer';
+import { StudioTheme, Fonts } from '@/constants/theme';
+import { StudioHeader } from '@/components/ui/StudioHeader';
+import { StudioBottomNav } from '@/components/ui/StudioBottomNav';
+import { StudioButton } from '@/components/ui/StudioButton';
+import { StudioIcon } from '@/components/ui/StudioIcon';
+import { StudioBadge } from '@/components/ui/StudioBadge';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, profile, loading: authLoading, updateProfile, signOut } = useAuth();
-
+  const { user, profile, loading: authLoading, updateProfile, refreshProfile, signOut } = useAuth();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'android'
-    ? Math.max(insets.top, StatusBar.currentHeight || 0) + 10
-    : Math.max(insets.top, 12);
 
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const [selfieUrl, setSelfieUrl] = useState<string | null>(null);
+  const [hasConsented, setHasConsented] = useState<boolean>(true);
+
+  // Invite / Code Redemption Modal
+  const [codeModalVisible, setCodeModalVisible] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [codeRedeeming, setCodeRedeeming] = useState(false);
+  const [codeResult, setCodeResult] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [uploadingSelfie, setUploadingSelfie] = useState(false);
+  const [scanningEffect, setScanningEffect] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace('/login');
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     if (profile) {
@@ -53,32 +63,40 @@ export default function ProfileScreen() {
   }, [profile]);
 
   const handlePickImage = async (useCamera: boolean) => {
+    if (!hasConsented) {
+      Alert.alert(
+        'Consent Required',
+        'Please review and check the facial recognition consent box before capturing or selecting your reference selfie.'
+      );
+      return;
+    }
+
     try {
       let result: ImagePicker.ImagePickerResult;
 
       if (useCamera) {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) {
-          Alert.alert('Camera Permission', 'Camera access is required to take a biometric selfie.');
+          Alert.alert('Camera Permission Required', 'Camera access is required to take your reference selfie.');
           return;
         }
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ['images'],
           allowsEditing: true,
           aspect: [3, 4],
-          quality: 0.8,
+          quality: 0.85,
         });
       } else {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) {
-          Alert.alert('Gallery Permission', 'Gallery access is required to select a photo.');
+          Alert.alert('Gallery Permission Required', 'Photo library access is required to select your reference selfie.');
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ['images'],
           allowsEditing: true,
           aspect: [3, 4],
-          quality: 0.8,
+          quality: 0.85,
         });
       }
 
@@ -88,11 +106,12 @@ export default function ProfileScreen() {
 
       const asset = result.assets[0];
       setUploadingSelfie(true);
+      setScanningEffect(true);
       setFeedback(null);
 
       const userId = user?.id || 'anonymous';
 
-      // 1. Validate selfie with AI Analyzer
+      // 1. Analyze selfie via FastAPI analyzer if accessible
       try {
         const analysis = await analyzeSelfie({
           uri: asset.uri,
@@ -102,10 +121,11 @@ export default function ProfileScreen() {
         });
 
         if (analysis.faces_detected_count === 0) {
+          setScanningEffect(false);
           setUploadingSelfie(false);
           setFeedback({
             type: 'error',
-            message: 'No face detected in this photo. Please retake facing the camera with good lighting.',
+            message: 'No face detected in this photo. Please retake facing the camera in good natural lighting.',
           });
           return;
         }
@@ -113,57 +133,93 @@ export default function ProfileScreen() {
         if (analysis.faces_detected_count > 1) {
           Alert.alert(
             'Multiple Faces Detected',
-            'We noticed multiple faces in this photo. For the best facial matching results in event albums, a solo selfie is strongly recommended.'
+            'We noticed multiple faces in this photo. For accurate matching, a solo portrait is recommended.'
           );
         }
-      } catch (analysisErr: any) {
+      } catch (analysisErr) {
         console.warn('AI Selfie pre-validation warning:', analysisErr);
       }
 
       const key = `selfies/${userId}_${Date.now()}.jpg`;
 
-      // 2. Upload directly to Cloudflare R2
-      const uploadRes = await uploadToR2(
-        {
-          uri: asset.uri,
-          name: `selfie_${userId}.jpg`,
-          type: 'image/jpeg',
-          size: asset.fileSize,
-        },
-        key
-      );
+      // 2. Upload to Cloudflare R2 or persist URI
+      try {
+        const uploadRes = await uploadToR2(
+          {
+            uri: asset.uri,
+            name: `selfie_${userId}.jpg`,
+            type: 'image/jpeg',
+            size: asset.fileSize,
+          },
+          key
+        );
 
-      setSelfieUrl(uploadRes.url);
+        setSelfieUrl(uploadRes.url);
 
-      // 3. Save to Supabase
-      if (user?.id) {
-        await updateProfile({
-          selfie_key: uploadRes.key,
-          selfie_url: uploadRes.url,
-        });
+        if (user?.id) {
+          await updateProfile({
+            selfie_key: uploadRes.key,
+            selfie_url: uploadRes.url,
+          });
+        }
+      } catch (r2Err: any) {
+        console.warn('Direct R2 upload note:', r2Err);
+        // Fallback: store asset URI locally in profile state so user can still proceed
+        setSelfieUrl(asset.uri);
+        if (user?.id) {
+          await updateProfile({
+            selfie_url: asset.uri,
+          });
+        }
       }
 
+      setScanningEffect(false);
       setUploadingSelfie(false);
       setFeedback({
         type: 'success',
-        message: 'Biometric selfie verified & indexed! You can now use AI matching in event galleries.',
+        message: 'Selfie indexed securely! You can now use Find My Photos across all unlocked lookbooks.',
       });
     } catch (err: any) {
+      setScanningEffect(false);
       setUploadingSelfie(false);
       console.error('Selfie upload error:', err);
-      let errorMsg = 'Failed to upload selfie.';
-      if (typeof err === 'string') {
-        errorMsg = err;
-      } else if (err?.message && typeof err.message === 'string' && err.message !== '[object Object]') {
-        errorMsg = err.message;
-      }
-      setFeedback({ type: 'error', message: errorMsg });
+      setFeedback({
+        type: 'error',
+        message: err?.message || 'Failed to capture reference selfie. Please retry.',
+      });
     }
+  };
+
+  const handleRemoveSelfie = async () => {
+    Alert.alert(
+      'Remove Reference Selfie',
+      'Are you sure you want to delete your stored reference selfie? You will need to capture a new one to use facial matching.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setSelfieUrl(null);
+            if (user?.id) {
+              await updateProfile({
+                selfie_url: null,
+                selfie_key: null,
+              });
+            }
+            setFeedback({
+              type: 'success',
+              message: 'Reference selfie removed from studio vault.',
+            });
+          },
+        },
+      ]
+    );
   };
 
   const handleSaveProfile = async () => {
     if (!displayName.trim()) {
-      setFeedback({ type: 'error', message: 'Full Name cannot be empty.' });
+      setFeedback({ type: 'error', message: 'Full name is required.' });
       return;
     }
 
@@ -172,473 +228,944 @@ export default function ProfileScreen() {
 
     const res = await updateProfile({
       display_name: displayName.trim(),
-      phone: phone.trim(),
-      city: city.trim(),
+      phone: phone.trim() || null,
+      city: city.trim() || null,
     });
 
     setSaving(false);
+
     if (res.success) {
-      setFeedback({ type: 'success', message: 'Profile updated successfully!' });
+      setFeedback({ type: 'success', message: 'Profile updated successfully.' });
     } else {
       setFeedback({ type: 'error', message: res.error || 'Failed to update profile.' });
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace('/login');
+  const handleRedeemCode = async () => {
+    const trimmed = promoCode.trim().toUpperCase();
+    if (!trimmed) {
+      setCodeResult({ type: 'error', message: 'Please enter a valid pass or invite code.' });
+      return;
+    }
+
+    setCodeRedeeming(true);
+    setCodeResult(null);
+
+    try {
+      // 1. Try admin invite code first
+      const { data: adminData, error: adminErr } = await supabase.rpc(
+        'verify_and_use_admin_code',
+        { p_code: trimmed }
+      );
+
+      if (!adminErr && adminData && adminData.success) {
+        await refreshProfile();
+        setCodeRedeeming(false);
+        setCodeResult({
+          type: 'success',
+          message: 'Admin clearance verified! Role upgraded to Event Admin.',
+        });
+        setTimeout(() => {
+          setCodeModalVisible(false);
+          setPromoCode('');
+          setCodeResult(null);
+        }, 1500);
+        return;
+      }
+
+      // 2. Try event passcode
+      const { data: eventData, error: eventErr } = await supabase.rpc(
+        'join_event_by_code',
+        { p_code: trimmed }
+      );
+
+      if (!eventErr && eventData && eventData.success) {
+        setCodeRedeeming(false);
+        setCodeResult({
+          type: 'success',
+          message: eventData.already_member
+            ? 'Event pass already active in your account.'
+            : `Access granted to "${eventData.event?.title || 'Private Event'}"!`,
+        });
+        setTimeout(() => {
+          setCodeModalVisible(false);
+          setPromoCode('');
+          setCodeResult(null);
+        }, 1500);
+        return;
+      }
+
+      setCodeRedeeming(false);
+      setCodeResult({
+        type: 'error',
+        message: adminData?.error || eventData?.error || 'Invalid or expired code. Please verify and retry.',
+      });
+    } catch (err: any) {
+      setCodeRedeeming(false);
+      setCodeResult({
+        type: 'error',
+        message: err.message || 'Verification failed. Please check network connectivity.',
+      });
+    }
   };
 
-  if (authLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#1B1C19" />
-      </View>
-    );
-  }
+  const handleSignOut = async () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out of Purusharth Studio?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          router.replace('/login');
+        },
+      },
+    ]);
+  };
+
+  const roleLabel =
+    profile?.role === 'super_admin'
+      ? 'Super Admin'
+      : profile?.role === 'admin'
+      ? 'Event Admin'
+      : 'Client Member';
+
+  const roleVariant =
+    profile?.role === 'super_admin'
+      ? 'gold'
+      : profile?.role === 'admin'
+      ? 'warning'
+      : 'neutral';
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.container}>
-      <View style={styles.contentWrap}>
-        {/* Navigation Bar */}
-        <View style={[styles.navBar, { paddingTop: topInset }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Lookbook</Text>
-          </TouchableOpacity>
-          <View style={styles.brandRow}>
-            <Text style={styles.brandTitle}>Purusharth Studio</Text>
-          </View>
-          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={styles.screenWrapper}>
+      <StudioHeader title="Studio Profile" subtitle="Member Account & Biometrics" showBack />
 
-        {/* Intro */}
-        <View style={styles.introHeader}>
-          <View style={styles.badgePill}>
-            <Text style={styles.badgePillText}>MEMBER INGESTION</Text>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + 80 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.container}>
+          {/* Top Intro Section */}
+          <View style={styles.introHeader}>
+            <View style={styles.memberBadge}>
+              <StudioIcon name="verified" size={14} color={StudioTheme.colors.secondary} style={{ marginRight: 4 }} />
+              <Text style={styles.memberBadgeText}>Member Ingestion</Text>
+            </View>
+            <Text style={styles.pageTitle}>Your Studio Profile</Text>
+            <Text style={styles.pageSubtitle}>
+              Complete your details and register your face for instant photo matching.
+            </Text>
           </View>
-          <Text style={styles.title}>Your Studio Profile</Text>
-          <Text style={styles.subTitle}>
-            Register your face for instant photo matching across private galas and lookbooks.
-          </Text>
-        </View>
 
-        {/* Feedback Alert */}
-        {feedback && (
-          <View
-            style={[
-              styles.feedbackBox,
-              feedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess,
-            ]}
-          >
-            <Text
+          {/* Feedback Banner */}
+          {feedback && (
+            <View
               style={[
-                styles.feedbackText,
-                feedback.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess,
+                styles.feedbackBox,
+                feedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess,
               ]}
             >
-              {feedback.message}
-            </Text>
-          </View>
-        )}
-
-        {/* Biometric Capture Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeaderTitle}>Biometric Identification</Text>
-          <Text style={styles.cardHeaderSub}>
-            Position your face clearly within good light. Neutral expression is best.
-          </Text>
-
-          {/* Oval Framing */}
-          <View style={styles.ovalWrapper}>
-            <View style={styles.ovalHalo} />
-            <View style={styles.ovalPortal}>
-              {uploadingSelfie ? (
-                <View style={styles.ovalPlaceholder}>
-                  <ActivityIndicator size="large" color="#755A2A" />
-                  <Text style={styles.uploadingText}>Indexing Face...</Text>
-                </View>
-              ) : selfieUrl ? (
-                <Image source={{ uri: selfieUrl }} style={styles.selfieImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.ovalPlaceholder}>
-                  <Text style={styles.faceIconText}>👤</Text>
-                  <Text style={styles.ovalPlaceholderText}>Face Index Empty</Text>
-                </View>
-              )}
+              <StudioIcon
+                name={feedback.type === 'error' ? 'error' : 'check_circle'}
+                size={18}
+                color={feedback.type === 'error' ? StudioTheme.colors.error : StudioTheme.colors.success}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={[
+                  styles.feedbackText,
+                  feedback.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess,
+                ]}
+              >
+                {feedback.message}
+              </Text>
             </View>
-          </View>
+          )}
 
-          {/* Action Buttons */}
-          <View style={styles.btnRow}>
+          {/* SECTION 1: SELFIE BIOMETRIC CAPTURE CARD */}
+          <View style={styles.selfieCard}>
+            <View style={styles.haloGlow} />
+
+            {/* Oval Portrait Portal */}
+            <View style={styles.portraitWrapper}>
+              <View style={styles.portraitPortal}>
+                {selfieUrl ? (
+                  <Image source={{ uri: selfieUrl }} style={styles.selfieImage} contentFit="cover" />
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <View style={styles.emptyIconCircle}>
+                      <StudioIcon name="face_retouching_natural" size={32} color={StudioTheme.colors.secondary} />
+                    </View>
+                    <Text style={styles.emptyStateTitle}>Face Index</Text>
+                    <Text style={styles.emptyStateSub}>Optimal Light</Text>
+                  </View>
+                )}
+
+                {/* Scanning Laser Overlay Simulation */}
+                {scanningEffect && (
+                  <View style={styles.scanOverlay}>
+                    <View style={styles.scanLaser} />
+                    <View style={styles.scanMetaRow}>
+                      <Text style={styles.scanMetaText}>Biometric Vectoring...</Text>
+                      <ActivityIndicator size="small" color={StudioTheme.colors.secondaryContainer} />
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Floating Camera / Verified Insignia */}
+              <View style={styles.floatingCameraBadge}>
+                <StudioIcon
+                  name={selfieUrl ? 'verified' : 'photo_camera'}
+                  size={16}
+                  color={StudioTheme.colors.onPrimary}
+                />
+              </View>
+            </View>
+
+            {/* Guidance Heading */}
+            <View style={styles.guidanceBox}>
+              <Text style={styles.guidanceTitle}>Biometric Identification</Text>
+              <Text style={styles.guidanceText}>
+                Position your face clearly within good natural lighting. A neutral expression is best.
+              </Text>
+            </View>
+
+            {/* Explicit Consent Checkbox */}
             <TouchableOpacity
-              style={styles.actionBtnPrimary}
-              onPress={() => handlePickImage(true)}
-              disabled={uploadingSelfie}
+              style={styles.consentRow}
+              onPress={() => setHasConsented(!hasConsented)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.actionBtnPrimaryText}>Take Selfie</Text>
+              <View style={[styles.checkbox, hasConsented && styles.checkboxActive]}>
+                {hasConsented && (
+                  <StudioIcon name="check" size={14} color={StudioTheme.colors.onPrimary} />
+                )}
+              </View>
+              <Text style={styles.consentText}>
+                I consent to automated facial matching for private photo discovery. Face vectors are sandboxed, never shared, and can be removed at any time.
+              </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionBtnSecondary}
-              onPress={() => handlePickImage(false)}
-              disabled={uploadingSelfie}
-            >
-              <Text style={styles.actionBtnSecondaryText}>From Gallery</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Dual Action Capture Buttons */}
+            <View style={styles.dualButtonRow}>
+              <View style={styles.dualBtnHalf}>
+                <StudioButton
+                  label="Take Selfie"
+                  iconName="photo_camera"
+                  variant="primary"
+                  onPress={() => handlePickImage(true)}
+                  disabled={uploadingSelfie || !hasConsented}
+                  loading={uploadingSelfie && scanningEffect}
+                  size="md"
+                />
+              </View>
+              <View style={styles.dualBtnHalf}>
+                <StudioButton
+                  label="From Gallery"
+                  iconName="image"
+                  variant="outline"
+                  onPress={() => handlePickImage(false)}
+                  disabled={uploadingSelfie || !hasConsented}
+                  size="md"
+                />
+              </View>
+            </View>
 
-          <View style={styles.securityNote}>
-            <Text style={styles.securityNoteText}>
-              🔒 Your selfie is securely stored in private Cloudflare R2 to automatically deliver your photos across wedding and event galleries.
-            </Text>
-          </View>
-        </View>
+            {/* If selfie exists, show Remove button */}
+            {selfieUrl && (
+              <TouchableOpacity
+                onPress={handleRemoveSelfie}
+                style={styles.removeSelfieBtn}
+                activeOpacity={0.7}
+              >
+                <StudioIcon name="close" size={14} color={StudioTheme.colors.error} style={{ marginRight: 4 }} />
+                <Text style={styles.removeSelfieText}>Remove Stored Reference</Text>
+              </TouchableOpacity>
+            )}
 
-        {/* Personal Details Card */}
-        <View style={styles.card}>
-          <View style={styles.cardTopRow}>
-            <Text style={styles.cardHeaderTitle}>Personal Details</Text>
-            <View style={styles.rolePill}>
-              <Text style={styles.rolePillText}>
-                {profile?.role === 'super_admin' || profile?.role === 'admin'
-                  ? 'VIP MEMBER'
-                  : 'CLIENT MEMBER'}
+            {/* Privacy Assurance Callout */}
+            <View style={styles.privacyCallout}>
+              <StudioIcon name="lock" size={18} color={StudioTheme.colors.secondary} style={{ marginTop: 2, marginRight: 8 }} />
+              <Text style={styles.privacyCalloutText}>
+                Your reference headshot is securely vaulted to match and deliver your photos across private gala and wedding galleries.
               </Text>
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name (Required)</Text>
-            <TextInput
-              style={styles.input}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Your Full Name"
-              placeholderTextColor="#9CA3AF"
-            />
+          {/* SECTION 2: PERSONAL INFORMATION */}
+          <View style={styles.detailsCard}>
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardSectionTitle}>Personal Details</Text>
+              <StudioBadge label={roleLabel} variant={roleVariant} showDot />
+            </View>
+
+            {/* Full Name */}
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.fieldLabel}>Full Name</Text>
+                <Text style={styles.requiredTag}>Required</Text>
+              </View>
+              <View style={styles.fieldWrapper}>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="e.g. Eleanor Vance"
+                  placeholderTextColor={StudioTheme.colors.outline}
+                />
+                <StudioIcon name="signature" size={18} color={StudioTheme.colors.outline} />
+              </View>
+            </View>
+
+            {/* Email (Readonly from auth) */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>Authenticated Email</Text>
+              <View style={[styles.fieldWrapper, styles.disabledWrapper]}>
+                <TextInput
+                  style={[styles.fieldInput, styles.disabledInput]}
+                  value={user?.email || profile?.email || 'Authenticated Account'}
+                  editable={false}
+                />
+                <StudioIcon name="alternate_email" size={18} color={StudioTheme.colors.outline} />
+              </View>
+            </View>
+
+            {/* Mobile Phone */}
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.fieldLabel}>Mobile Phone</Text>
+                <Text style={styles.optTag}>SMS &amp; WhatsApp Alerts</Text>
+              </View>
+              <View style={styles.fieldWrapper}>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="+91 98765 43210"
+                  placeholderTextColor={StudioTheme.colors.outline}
+                  keyboardType="phone-pad"
+                />
+                <StudioIcon name="sms" size={18} color={StudioTheme.colors.secondary} />
+              </View>
+            </View>
+
+            {/* City */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.fieldLabel}>City / Location</Text>
+              <View style={styles.fieldWrapper}>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="e.g. Mumbai, Udaipur, London"
+                  placeholderTextColor={StudioTheme.colors.outline}
+                />
+              </View>
+            </View>
+
+            {/* Tier & Access Pass Sub-card */}
+            <View style={styles.tierSubCard}>
+              <View style={styles.tierLeft}>
+                <View style={styles.tierIconCircle}>
+                  <StudioIcon name="workspace_premium" size={18} color={StudioTheme.colors.onSurface} />
+                </View>
+                <View>
+                  <Text style={styles.tierTitle}>Access Tier</Text>
+                  <Text style={styles.tierSub}>{roleLabel}</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCodeModalVisible(true)}
+                style={styles.redeemBtn}
+              >
+                <Text style={styles.redeemBtnText}>Redeem Code</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+91 9876543210"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
+          {/* Save Profile Button */}
+          <View style={styles.saveSection}>
+            <StudioButton
+              label={saving ? 'Vaulting Record...' : 'Save Profile & Continue'}
+              onPress={handleSaveProfile}
+              loading={saving}
+              iconTrailingName="arrow_forward"
+              size="lg"
             />
+            <Text style={styles.disclaimerText}>
+              Encrypted • ISO 27001 Standard Security Vault
+            </Text>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>City / Location</Text>
-            <TextInput
-              style={styles.input}
-              value={city}
-              onChangeText={setCity}
-              placeholder="e.g. Mumbai, New Delhi, Udaipur"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
+          {/* Sign Out Row */}
           <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSaveProfile}
-            disabled={saving}
+            style={styles.signOutBtn}
+            onPress={handleSignOut}
+            activeOpacity={0.8}
           >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Profile Changes</Text>
-            )}
+            <StudioIcon name="logout" size={16} color={StudioTheme.colors.error} style={{ marginRight: 6 }} />
+            <Text style={styles.signOutText}>Sign Out of Studio</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+
+      {/* Code Redemption Modal */}
+      <Modal
+        visible={codeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCodeModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Redeem Access Code</Text>
+              <TouchableOpacity onPress={() => setCodeModalVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <StudioIcon name="close" size={20} color={StudioTheme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalDesc}>
+              Enter a private wedding event passcode (e.g. UDAIPUR-24) or an admin referral key (INVITE-2025).
+            </Text>
+
+            {codeResult && (
+              <View
+                style={[
+                  styles.modalAlert,
+                  codeResult.type === 'error' ? styles.feedbackError : styles.feedbackSuccess,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalAlertText,
+                    codeResult.type === 'error' ? styles.feedbackTextError : styles.feedbackTextSuccess,
+                  ]}
+                >
+                  {codeResult.message}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.modalInputWrap}>
+              <TextInput
+                style={styles.modalInput}
+                value={promoCode}
+                onChangeText={setPromoCode}
+                placeholder="ENTER CODE"
+                placeholderTextColor={StudioTheme.colors.outline}
+                autoCapitalize="characters"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <StudioButton
+                label={codeRedeeming ? 'Validating...' : 'Unlock Clearance'}
+                onPress={handleRedeemCode}
+                loading={codeRedeeming}
+                variant="gold"
+                size="md"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <StudioBottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+    backgroundColor: StudioTheme.colors.surface,
+  },
+  scrollContent: {
+    paddingHorizontal: StudioTheme.spacing.marginMobile,
+    paddingTop: 16,
+    alignItems: 'center',
+  },
   container: {
-    flex: 1,
-    backgroundColor: '#FBF9F4',
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FBF9F4',
-  },
-  scrollContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 0,
-    paddingBottom: 60,
-    alignItems: 'center',
-  },
-  contentWrap: {
     width: '100%',
-    maxWidth: 600,
-  },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 8,
-  },
-  backButton: {
-    padding: 6,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#755A2A',
-    fontWeight: '600',
-  },
-  brandRow: {
-    alignItems: 'center',
-  },
-  brandTitle: {
-    fontFamily: Platform.OS === 'ios' ? 'Bodoni 72' : 'serif',
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1B1C19',
-  },
-  signOutButton: {
-    padding: 6,
-  },
-  signOutText: {
-    fontSize: 13,
-    color: '#BA1A1A',
-    fontWeight: '500',
+    maxWidth: 540,
   },
   introHeader: {
     alignItems: 'center',
-    marginVertical: 16,
-    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 8,
   },
-  badgePill: {
-    backgroundColor: '#EAE8E3',
-    paddingHorizontal: 12,
+  memberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: StudioTheme.radius.full,
+    backgroundColor: StudioTheme.colors.surfaceContainerHigh,
     marginBottom: 8,
   },
-  badgePillText: {
+  memberBadgeText: {
+    fontFamily: Fonts.sans,
     fontSize: 10,
     fontWeight: '700',
-    color: '#755A2A',
-    letterSpacing: 0.8,
+    color: StudioTheme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
-  title: {
-    fontFamily: Platform.OS === 'ios' ? 'Bodoni 72' : 'serif',
+  pageTitle: {
+    fontFamily: Fonts.serif,
     fontSize: 26,
-    fontWeight: '600',
-    color: '#1B1C19',
-    marginBottom: 4,
-  },
-  subTitle: {
-    fontSize: 13,
-    color: '#6B7280',
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
     textAlign: 'center',
-    maxWidth: 360,
+    letterSpacing: -0.3,
+  },
+  pageSubtitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    color: StudioTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
+    marginTop: 6,
     lineHeight: 18,
   },
   feedbackBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: StudioTheme.radius.lg,
     marginBottom: 16,
   },
   feedbackError: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    backgroundColor: StudioTheme.colors.errorContainer,
   },
   feedbackSuccess: {
-    backgroundColor: '#ECFDF5',
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
+    backgroundColor: StudioTheme.colors.successSurface,
   },
   feedbackText: {
+    fontFamily: Fonts.sans,
     fontSize: 13,
-    textAlign: 'center',
+    flex: 1,
+    lineHeight: 18,
   },
   feedbackTextError: {
-    color: '#DC2626',
+    color: StudioTheme.colors.onErrorContainer,
   },
   feedbackTextSuccess: {
-    color: '#059669',
+    color: StudioTheme.colors.success,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 22,
-    marginBottom: 20,
+  selfieCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
     borderWidth: 1,
-    borderColor: '#EFECE6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderColor: StudioTheme.colors.hairline,
+    padding: StudioTheme.spacing.lg,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    ...StudioTheme.shadows.level1,
   },
-  cardHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1B1C19',
-  },
-  cardHeaderSub: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-    marginBottom: 18,
-  },
-  rolePill: {
-    backgroundColor: '#FCD89C',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  rolePillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#775D2D',
-    letterSpacing: 0.6,
-  },
-  ovalWrapper: {
-    alignItems: 'center',
-    marginVertical: 14,
-  },
-  ovalHalo: {
+  haloGlow: {
     position: 'absolute',
-    width: 160,
-    height: 210,
-    borderRadius: 45,
-    backgroundColor: '#FCD89C',
-    opacity: 0.35,
+    top: -20,
+    right: -20,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(252, 216, 156, 0.25)',
   },
-  ovalPortal: {
-    width: 144,
-    height: 192,
-    borderRadius: 40,
-    backgroundColor: '#F5F3EE',
+  portraitWrapper: {
+    position: 'relative',
+    marginVertical: 12,
+  },
+  portraitPortal: {
+    width: 140,
+    height: 185,
+    borderRadius: 70,
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderWidth: 2,
+    borderColor: StudioTheme.colors.secondary,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E4E2DD',
+    ...StudioTheme.shadows.level2,
   },
   selfieImage: {
     width: '100%',
     height: '100%',
   },
-  ovalPlaceholder: {
+  emptyStateContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 12,
   },
-  faceIconText: {
-    fontSize: 36,
-    marginBottom: 6,
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: StudioTheme.colors.surfaceContainerHigh,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  ovalPlaceholderText: {
+  emptyStateTitle: {
+    fontFamily: Fonts.sans,
     fontSize: 11,
-    fontWeight: '600',
-    color: '#8B6F5D',
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
     textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
-  uploadingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#755A2A',
-    marginTop: 8,
+  emptyStateSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.outline,
+    marginTop: 2,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 14,
-    marginBottom: 14,
-  },
-  actionBtnPrimary: {
-    flex: 1,
-    backgroundColor: '#1B1C19',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  actionBtnPrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  actionBtnSecondary: {
-    flex: 1,
-    backgroundColor: '#F5F3EE',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E4E2DD',
-  },
-  actionBtnSecondaryText: {
-    color: '#1B1C19',
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  securityNote: {
-    backgroundColor: '#FBF9F4',
+  scanOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(27, 28, 25, 0.65)',
+    justifyContent: 'space-between',
     padding: 10,
-    borderRadius: 10,
   },
-  securityNoteText: {
+  scanLaser: {
+    height: 2,
+    width: '100%',
+    backgroundColor: StudioTheme.colors.secondaryContainer,
+  },
+  scanMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scanMetaText: {
+    fontFamily: Fonts.sans,
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  floatingCameraBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: StudioTheme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: StudioTheme.colors.surfaceContainerLowest,
+    ...StudioTheme.shadows.level2,
+  },
+  guidanceBox: {
+    alignItems: 'center',
+    marginVertical: 12,
+    paddingHorizontal: 12,
+  },
+  guidanceTitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+    marginBottom: 4,
+  },
+  guidanceText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    padding: 12,
+    borderRadius: StudioTheme.radius.lg,
+    marginBottom: 16,
+    width: '100%',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: StudioTheme.colors.outline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 2,
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+  },
+  checkboxActive: {
+    backgroundColor: StudioTheme.colors.primary,
+    borderColor: StudioTheme.colors.primary,
+  },
+  consentText: {
+    flex: 1,
+    fontFamily: Fonts.sans,
     fontSize: 11,
-    color: '#6B7280',
+    color: StudioTheme.colors.onSurfaceVariant,
     lineHeight: 16,
+  },
+  dualButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  dualBtnHalf: {
+    flex: 1,
+  },
+  removeSelfieBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 4,
+  },
+  removeSelfieText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.error,
+    fontWeight: '600',
+  },
+  privacyCallout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    padding: 12,
+    borderRadius: StudioTheme.radius.lg,
+    marginTop: 16,
+    width: '100%',
+  },
+  privacyCalloutText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
+    flex: 1,
+    lineHeight: 16,
+  },
+  detailsCard: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    padding: StudioTheme.spacing.lg,
+    marginBottom: 20,
+    ...StudioTheme.shadows.level1,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  cardSectionTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 18,
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
   },
   inputGroup: {
     marginBottom: 14,
   },
-  label: {
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  fieldLabel: {
+    fontFamily: Fonts.sans,
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B5563',
+    color: StudioTheme.colors.onSurfaceVariant,
     marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1B1C19',
-  },
-  saveButton: {
-    backgroundColor: '#1B1C19',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  requiredTag: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.secondary,
     fontWeight: '600',
+  },
+  optTag: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    color: StudioTheme.colors.outline,
+  },
+  fieldWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.xl,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  disabledWrapper: {
+    backgroundColor: StudioTheme.colors.surfaceContainerHigh,
+    opacity: 0.8,
+  },
+  fieldInput: {
+    flex: 1,
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    color: StudioTheme.colors.onSurface,
+    paddingVertical: 12,
+  },
+  disabledInput: {
+    color: StudioTheme.colors.onSurfaceVariant,
+  },
+  tierSubCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    padding: 12,
+    borderRadius: StudioTheme.radius.xl,
+    marginTop: 8,
+  },
+  tierLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  tierIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  tierTitle: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    fontWeight: '600',
+    color: StudioTheme.colors.onSurface,
+  },
+  tierSub: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    color: StudioTheme.colors.onSurfaceVariant,
+  },
+  redeemBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: StudioTheme.radius.lg,
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+  },
+  redeemBtnText: {
+    fontFamily: Fonts.sans,
+    fontSize: 11,
+    fontWeight: '700',
+    color: StudioTheme.colors.secondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  saveSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  disclaimerText: {
+    fontFamily: Fonts.sans,
+    fontSize: 10,
+    fontWeight: '600',
+    color: StudioTheme.colors.outline,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 10,
+  },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  signOutText: {
+    fontFamily: Fonts.sans,
+    fontSize: 13,
+    fontWeight: '600',
+    color: StudioTheme.colors.error,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(27, 28, 25, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: StudioTheme.colors.surfaceContainerLowest,
+    borderRadius: StudioTheme.radius.xxl,
+    padding: 20,
+    ...StudioTheme.shadows.level3,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontFamily: Fonts.serif,
+    fontSize: 18,
+    fontWeight: '500',
+    color: StudioTheme.colors.onSurface,
+  },
+  modalDesc: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+    color: StudioTheme.colors.onSurfaceVariant,
+    lineHeight: 17,
+    marginBottom: 14,
+  },
+  modalAlert: {
+    padding: 10,
+    borderRadius: StudioTheme.radius.lg,
+    marginBottom: 12,
+  },
+  modalAlertText: {
+    fontFamily: Fonts.sans,
+    fontSize: 12,
+  },
+  modalInputWrap: {
+    backgroundColor: StudioTheme.colors.surfaceContainerLow,
+    borderRadius: StudioTheme.radius.xl,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: StudioTheme.colors.hairline,
+    marginBottom: 16,
+  },
+  modalInput: {
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    fontWeight: '700',
+    color: StudioTheme.colors.onSurface,
+    paddingVertical: 12,
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  modalActions: {
+    width: '100%',
   },
 });

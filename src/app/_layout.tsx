@@ -37,6 +37,8 @@ export default function RootLayout() {
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
+          <Stack.Screen name="events" />
+          <Stack.Screen name="find-photos" />
           <Stack.Screen name="login" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="event/[id]" />
